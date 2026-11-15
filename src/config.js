@@ -7,7 +7,8 @@ import { locale } from './i18n.js';
 function loadDraft() {
   try {
     if (new URLSearchParams(location.search).has('draft')) {
-      const d = JSON.parse(localStorage.getItem('vkeq-admin-draft') || 'null');
+      const raw = JSON.parse(localStorage.getItem('vkeq-admin-draft') || 'null');
+      const d = raw?.data || raw;
       if (d && d.performance) return d;
     }
   } catch {}

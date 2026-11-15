@@ -1,7 +1,14 @@
 import { CONFIG, money, payoutsTotal, monthLabel, statValue } from './config.js';
 import { W, H, ROOMS, FLOOR, WALL } from './map.js';
 import { sfx } from './audio.js';
-import { t, tr, getLang, setLang, onLangChange, locale } from './i18n.js';
+import { t, tr, getLang, setLang, onLangChange } from './i18n.js';
+import { FACTS, randomFact } from './facts.js';
+import { logoDataURL } from './logos.js';
+
+const logoHTML = (s, cls) => {
+  const url = logoDataURL(s.icon || s.id);
+  return url ? `<img class="${cls}" src="${url}" alt="" />` : cls === 'logo-big' ? '<div class="gem"></div>' : '<i></i>';
+};
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -25,7 +32,6 @@ function openPanel(title, html, { onClose, wide = false, accent = '#f5c542', aft
   $('#panel-close').setAttribute('aria-label', t('close'));
   if (p.hidden) {
     p.hidden = false;
-    sfx.open();
     onCloseCb = onClose || null;
     requestAnimationFrame(() => $('#panel-close').focus());
   }
@@ -65,6 +71,7 @@ export function initPanel() {
 
 // ---------------- Content panels ----------------
 export function controlsHTML() {
+  if (matchMedia('(pointer: coarse)').matches) return `<div class="controls">${t('controlsTouch').map((l) => `<div>\u25B8 ${l}</div>`).join('')}</div>`;
   const c = t('controls');
   return `<div class="controls">
       <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <kbd>←</kbd><kbd>→</kbd> ${c[0]}</div>
@@ -105,7 +112,7 @@ export const showPerformance = panel((onClose) => {
   openPanel(
     t('performanceTitle'),
     `<div class="muted period">${esc(tr(p.period))}</div>
-     <div class="stats">${p.stats
+     <div class="stats" style="--cols:${p.stats.length % 3 === 0 || p.stats.length > 4 ? 3 : Math.min(p.stats.length, 2)}">${p.stats
        .map((s) => `<div class="stat ${esc(s.tone || '')}"><span>${esc(tr(s.label))}</span><b>${esc(statValue(s.value))}</b></div>`)
        .join('')}</div>
      <canvas class="equity" width="300" height="110" aria-label="${t('equityAria')}"></canvas>
@@ -120,23 +127,24 @@ export const showPerformance = panel((onClose) => {
   );
 });
 
-export const showEquity = panel(() => {
-  const p = CONFIG.performance;
-  const eq = p.equity.map(Number);
-  const first = eq[0] || 0;
-  const last = eq[eq.length - 1] || 0;
-  const peak = Math.max(...eq);
+// Random market anecdote from an object in the world
+export const showFact = panel((cat, fact = randomFact(cat), onAnother) => {
+  const c = FACTS[cat];
   openPanel(
-    t('equityTitle'),
-    `<div class="muted period">${esc(tr(p.period))}</div>
-     <canvas class="equity big" width="300" height="140" aria-label="${t('equityAria')}"></canvas>
-     <div class="stats three">
-       <div class="stat ${last - first >= 0 ? 'good' : 'bad'}"><span>${t('equityFinal')}</span><b>${money(last - first, { sign: true })}</b></div>
-       <div class="stat"><span>${t('equityPeak')}</span><b>${money(peak)}</b></div>
-       <div class="stat"><span>${t('equityDays')}</span><b>${eq.length.toLocaleString(locale())}</b></div>
+    tr(c.title),
+    `<div class="fact">
+       <div class="fact-ico">${c.icon}</div>
+       <p>${esc(tr(fact))}</p>
      </div>
-     <p class="disclaimer">${esc(tr(p.disclaimer))}</p>`,
-    { wide: true, accent: '#5ad1ff', after: () => drawEquity($('#panel-body canvas.equity'), eq) },
+     <button class="btn-row" id="fact-next">${t('another')} &raquo;</button>`,
+    {
+      accent: '#5ad1ff',
+      after: () =>
+        $('#fact-next').addEventListener('click', () => {
+          onAnother?.();
+          showFact(cat, randomFact(cat), onAnother);
+        }),
+    },
   );
 });
 
@@ -144,7 +152,7 @@ export const showSocial = panel((s) => {
   openPanel(
     s.label,
     `<div class="social-one" style="--c:${esc(s.color)}">
-       <div class="gem"></div>
+       ${logoHTML(s, 'logo-big')}
        <div class="big">${esc(s.handle)}</div>
        <p>${esc(tr(s.desc))}</p>
        <a class="btn" href="${esc(s.url)}" target="_blank" rel="noopener">${t('open')} ${esc(s.label)} ↗</a>
@@ -160,7 +168,7 @@ export const showAllSocials = panel(() => {
      <div class="social-list">${CONFIG.socials
        .map(
          (s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener" style="--c:${esc(s.color)}">
-            <i></i><span><b>${esc(s.label)}</b><small>${esc(s.handle)}</small></span><em>↗</em></a>`,
+            ${logoHTML(s, 'logo-small')}<span><b>${esc(s.label)}</b><small>${esc(s.handle)}</small></span><em>↗</em></a>`,
        )
        .join('')}</div>
      ${CONFIG.contactEmail ? `<p class="muted">${t('contact')}: <a href="mailto:${esc(CONFIG.contactEmail)}">${esc(CONFIG.contactEmail)}</a></p>` : ''}`,
@@ -170,7 +178,7 @@ export const showAllSocials = panel(() => {
 
 export const showMenu = panel((go) => {
   const m = t('menuItems');
-  const icons = { bio: '📖', chest: '💰', equity: '📈', portal: '🌀', welcome: '📜' };
+  const icons = { bio: '📖', chest: '💰', portal: '🌀', welcome: '📜' };
   openPanel(
     t('menuTitle'),
     `<p>${t('menuBody')}</p>
@@ -273,7 +281,7 @@ export function initLangSwitch() {
     b.addEventListener('click', (e) => {
       e.stopPropagation();
       setLang(code);
-      sfx.blip();
+      sfx.ui();
     });
     box.appendChild(b);
   }
@@ -290,7 +298,8 @@ export function initHUD() {
     $('#hud-tag').textContent = tr(CONFIG.tagline);
     $('#hud-room').textContent = t('rooms.' + currentRoomId);
     $('#btn-menu').textContent = t('menu');
-    $('#btn-mute').title = t('sound');
+    $('#btn-music').title = t('music');
+    $('#btn-sfx').title = t('effects');
   };
   render();
   onLangChange(render);

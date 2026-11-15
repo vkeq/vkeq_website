@@ -17,10 +17,19 @@ Vite + Three.js, no framework. Low-res render (canvas at 1/2-1/4 size, `image-re
 - `src/map.js` – tile grid. `ROOMS` / `CORRIDORS` rectangles (x = column, z = row, cell (x,z) centred at world (x,0,z)). Walls are generated around floor. `findPath` = 8-dir BFS.
 - `src/world.js` – floors/walls (InstancedMesh), torches (auto-placed on north walls, skips `world.reserve(x,z)` cells), dust + embers.
   Walls with floor directly north are drawn LOW (cut-away) so they never hide the player – keep that rule.
-- `src/props.js` – every prop and interactable, grouped by room. An interactable is `{ id, x, z, radius, prompt, hit, action }`.
-  Call `grid.block(x,z)` (via `solid`) for cells a prop occupies; `world.reserve(x,z)` for wall cells it covers.
+- `src/props.js` – builds the shared `ctx` and calls one module per room in `src/rooms/` (entrance, library, treasury, portals).
+  `src/rooms/decor.js` has reusable voxel props (barrel, crate, rug, coin pile, gold bars, crystal cluster, candles, sparkles).
+  Register interactables with `ctx.item({ id, x, z, radius, prompt: () => T('prompts.x'), hitBox: [x,y,z,w,h,d], sound: 'sfxName', action })`.
+  Call `ctx.solid(x,z)` for cells a prop occupies (half coordinates block both neighbours); `world.reserve(x,z)` for wall cells it covers.
+- `src/facts.js` – market anecdotes (EN/IT) by category; objects open them with `actions.fact('gold' | 'oil' | 'futures' | 'books' | 'trading')`.
+- `src/logos.js` – pixel maps of social logos → floating voxel logos and panel icons (`icon` field of a social).
+- `src/vision.js` – limited view radius around the player: patches the fog chunk of every material (`applyVision(scene)` after building,
+  `visionMaterial(m)` for materials created later, `visionGLSL` for custom ShaderMaterials). Radius: `vision.near/far`.
+- `src/audio.js` – everything synthesised: cave ambience (pads, drone, drips, wind), per-room / per-object sfx with stone reverb + echo,
+  footsteps by surface, torch crackle and portal hum by distance. Add a sound by adding a function to `sfx`.
   `radius` must be reachable: some free cell centre must be closer than `radius - 0.15`, or click-to-walk fails.
 - `src/ui.js` – HTML panels (`openPanel`), HUD, minimap, pixel equity chart. `src/voxel.js` – `box()`, `glow()`, `voxelText()`, `label()` (HTML labels anchored to 3D objects).
+- Camera: follows the player directly and snaps to one render pixel (no easing) so the low-res image never swims.
 - `src/player.js` – voxel trader built with `VoxelPart` (per-voxel shading) + walk animation.
 - Decor: `VoxBatch` (voxel.js) merges many boxes into one InstancedMesh; rugs/barrels/crystals in props.js, wall/floor detail in `world.decorate()`. `src/audio.js` – WebAudio chiptune sfx.
 

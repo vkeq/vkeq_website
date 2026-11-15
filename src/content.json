@@ -1,8 +1,8 @@
 {
   "name": "vkeq",
   "tagline": {
-    "en": "Day Trader · Futures & Indices",
-    "it": "Day Trader · Futures & Indici"
+    "en": "Day Trader · Futures & Options",
+    "it": "Day Trader · Futures & Options"
   },
   "currency": "USD",
   "contactEmail": "contact@vkeq.com",
@@ -27,8 +27,8 @@
           "it": "Mercati"
         },
         "value": {
-          "en": "NQ · ES · DAX",
-          "it": "NQ · ES · DAX"
+          "en": "NQ · ES · QQQ · SPY",
+          "it": "NQ · ES · QQQ · SPY"
         }
       },
       {
@@ -37,8 +37,8 @@
           "it": "Stile"
         },
         "value": {
-          "en": "Intraday / Scalping",
-          "it": "Intraday / Scalping"
+          "en": "High RR",
+          "it": "High RR"
         }
       },
       {
@@ -47,8 +47,8 @@
           "it": "Sessione"
         },
         "value": {
-          "en": "New York open",
-          "it": "Apertura New York"
+          "en": "New York AM",
+          "it": "New York AM"
         }
       },
       {
@@ -57,8 +57,8 @@
           "it": "Esperienza"
         },
         "value": {
-          "en": "5+ years",
-          "it": "5+ anni"
+          "en": "2+ years",
+          "it": "2+ anni"
         }
       },
       {
@@ -67,8 +67,8 @@
           "it": "Piattaforma"
         },
         "value": {
-          "en": "TradingView",
-          "it": "TradingView"
+          "en": "TradingView · MotiveWave",
+          "it": "TradingView · MotiveWave"
         }
       },
       {
@@ -103,30 +103,6 @@
           "it": "Win rate"
         },
         "value": "58%",
-        "tone": ""
-      },
-      {
-        "label": {
-          "en": "Profit factor",
-          "it": "Profit factor"
-        },
-        "value": "1.92",
-        "tone": ""
-      },
-      {
-        "label": {
-          "en": "Max drawdown",
-          "it": "Max drawdown"
-        },
-        "value": "-6.4%",
-        "tone": "bad"
-      },
-      {
-        "label": {
-          "en": "Total trades",
-          "it": "Trade totali"
-        },
-        "value": "412",
         "tone": ""
       },
       {
@@ -223,18 +199,20 @@
   },
   "socials": [
     {
-      "id": "youtube",
-      "label": "YouTube",
-      "handle": "@vkeq",
-      "url": "https://youtube.com/@vkeq",
-      "color": "#ff4040",
+      "id": "spotify",
+      "icon": "spotify",
+      "label": "Spotify",
+      "handle": "vkeq",
+      "url": "https://open.spotify.com/",
+      "color": "#1db954",
       "desc": {
-        "en": "Session recaps and live trading.",
-        "it": "Recap delle sessioni e live trading."
+        "en": "The playlists I trade to.",
+        "it": "Le playlist con cui faccio trading."
       }
     },
     {
       "id": "instagram",
+      "icon": "instagram",
       "label": "Instagram",
       "handle": "@vkeq",
       "url": "https://instagram.com/vkeq",
@@ -245,18 +223,8 @@
       }
     },
     {
-      "id": "x",
-      "label": "X / Twitter",
-      "handle": "@vkeq",
-      "url": "https://x.com/vkeq",
-      "color": "#e8e8f0",
-      "desc": {
-        "en": "Trade ideas and market thoughts.",
-        "it": "Idee di trading e pensieri sul mercato."
-      }
-    },
-    {
       "id": "discord",
+      "icon": "discord",
       "label": "Discord",
       "handle": "vkeq community",
       "url": "https://discord.gg/",
@@ -264,17 +232,6 @@
       "desc": {
         "en": "The community: we trade together.",
         "it": "La community: si fa trading insieme."
-      }
-    },
-    {
-      "id": "tradingview",
-      "label": "TradingView",
-      "handle": "vkeq",
-      "url": "https://tradingview.com/u/vkeq/",
-      "color": "#2ec4ff",
-      "desc": {
-        "en": "My charts and published ideas.",
-        "it": "I miei grafici e le idee pubblicate."
       }
     }
   ]

@@ -108,31 +108,6 @@ export function makeTextures() {
   return { wall, wallTop, floorStone, floorWood, floorGold, floorCrystal };
 }
 
-// Small canvas texture with pixel text, for floating labels.
-export function textTexture(text, { color = '#ffe9a8', bg = null, font = '"Press Start 2P", monospace', size = 8, pad = 3 } = {}) {
-  const c = document.createElement('canvas');
-  const g = c.getContext('2d');
-  g.font = `${size}px ${font}`;
-  const w = Math.ceil(g.measureText(text).width) + pad * 2;
-  const h = size + pad * 2;
-  c.width = w;
-  c.height = h;
-  g.font = `${size}px ${font}`;
-  g.textBaseline = 'top';
-  if (bg) {
-    g.fillStyle = bg;
-    g.fillRect(0, 0, w, h);
-  }
-  // 1px dark outline for readability
-  g.fillStyle = '#120a1c';
-  for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) g.fillText(text, pad + dx, pad + dy + 1);
-  g.fillStyle = color;
-  g.fillText(text, pad, pad + 1);
-  const t = finish(c);
-  t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
-  return { texture: t, w, h };
-}
-
 // Soft round glow used for additive sprites.
 let glowTex = null;
 export function glowTexture() {

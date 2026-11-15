@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { W, H, ROOMS, FLOOR, WALL } from './map.js';
 import { rng } from './textures.js';
-import { box, mat, glow, VoxBatch } from './voxel.js';
+import { box, glow, VoxBatch } from './voxel.js';
 
 const TALL = 2.0;
 const LOW = 0.35;
@@ -89,7 +89,12 @@ export function buildWorld(scene, grid, tex) {
     const off = { south: [0, 0.56], east: [0.56, 0], west: [-0.56, 0] }[dir];
     g.position.set(x + off[0], 1.15, z + off[1]);
     box(g, 0.08, 0.32, 0.08, '#5a3a22', 0, 0, 0);
-    box(g, 0.16, 0.06, 0.16, '#3b2a1e', 0, 0.16, 0);
+    box(g, 0.16, 0.06, 0.16, '#2c2a30', 0, 0.16, 0);
+    box(g, 0.18, 0.04, 0.04, '#2c2a30', 0, -0.05, 0);
+    // iron bracket fixed to the wall
+    const back = { south: [0, -0.12], east: [-0.12, 0], west: [0.12, 0] }[dir];
+    box(g, 0.04, 0.04, 0.04, '#2c2a30', back[0] * 0.5, -0.05, back[1] * 0.5);
+    box(g, 0.14, 0.2, 0.14, '#2c2a30', back[0], -0.08, back[1]).scale.set(back[0] ? 0.3 : 1, 1, back[1] ? 0.3 : 1);
     const flame = box(g, 0.12, 0.16, 0.12, '#ffb43a', 0, 0.27, 0, { emissive: '#ff8a1e', emissiveIntensity: 1 });
     const core = box(g, 0.06, 0.08, 0.06, '#fff2a8', 0, 0.3, 0, { emissive: '#fff2a8', emissiveIntensity: 1 });
     const halo = glow('#ff9a3a', 1.6, 0.5);
@@ -206,15 +211,27 @@ export function buildWorld(scene, grid, tex) {
         if (grid.cells[z]?.[x - 1] === FLOOR) faces.push([-1, 0]);
         if (!low) {
           for (const [fx, fz] of faces) {
-            const n = 2 + Math.floor(rr() * 3);
+            // bricks that stick out of the wall by different amounts
+            const n = 4 + Math.floor(rr() * 4);
             for (let i = 0; i < n; i++) {
-              const along = (rr() - 0.5) * 0.7;
-              const y = 0.15 + Math.floor(rr() * 7) * 0.25;
-              const w = 0.22 + rr() * 0.22;
-              const px = x + fx * 0.52 + (fz ? along : 0);
-              const pz = z + fz * 0.52 + (fx ? along : 0);
-              vb.add(px, y, pz, fz ? w : 0.06, 0.12, fx ? w : 0.06, pick(wallCol));
+              const along = (rr() - 0.5) * 0.72;
+              const y = 0.13 + Math.floor(rr() * 8) * 0.25;
+              const w = 0.22 + rr() * 0.26;
+              const out = 0.05 + rr() * 0.11;
+              const px = x + fx * (0.5 + out / 2) + (fz ? along : 0);
+              const pz = z + fz * (0.5 + out / 2) + (fx ? along : 0);
+              vb.add(px, y, pz, fz ? w : out, 0.13 + rr() * 0.06, fx ? w : out, pick(wallCol), 0.2);
+              // lighter top edge so each stone reads as a 3D block
+              vb.add(px, y + 0.075, pz, fz ? w - 0.02 : out + 0.005, 0.02, fx ? w - 0.02 : out + 0.005, '#6a6288', 0.15);
             }
+            // a big cracked boulder every now and then
+            if (rr() < 0.3) {
+              const along = (rr() - 0.5) * 0.5;
+              const y = 0.4 + rr() * 1.1;
+              vb.add(x + fx * 0.58 + (fz ? along : 0), y, z + fz * 0.58 + (fx ? along : 0), fz ? 0.38 : 0.16, 0.3, fx ? 0.38 : 0.16, '#3f3954', 0.2);
+            }
+            // moss / dark cracks
+            if (rr() < 0.35) vb.add(x + fx * 0.505 + (fz ? (rr() - 0.5) * 0.6 : 0), 0.2 + rr() * 0.5, z + fz * 0.505 + (fx ? (rr() - 0.5) * 0.6 : 0), fz ? 0.2 : 0.02, 0.3, fx ? 0.2 : 0.02, '#2f5a36', 0.3);
             // skirting stones along the bottom
             vb.add(x + fx * 0.53, 0.07, z + fz * 0.53, fz ? 1 : 0.1, 0.14, fx ? 1 : 0.1, '#3a3450', 0.2);
           }

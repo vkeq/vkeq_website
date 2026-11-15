@@ -3,6 +3,7 @@
 import './admin.css';
 import original from './content.json';
 import { drawEquity, flagCanvas } from './ui.js';
+import { LOGO_IDS } from './logos.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -23,7 +24,16 @@ const store = (k, v) => {
   } catch {}
 };
 
-let state = load(DRAFT_KEY) || structuredClone(original);
+// A draft is only reused if it was started from the content that is live now.
+const hash = (str) => {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+  return h;
+};
+const baseOf = () => hash(JSON.stringify(original));
+const savedDraft = load(DRAFT_KEY);
+let state = savedDraft?.base === baseOf() && savedDraft.data ? savedDraft.data : structuredClone(original);
+const saveDraft = () => store(DRAFT_KEY, { base: baseOf(), data: state });
 let dirty = JSON.stringify(state) !== JSON.stringify(original);
 
 // ---------- path helpers ----------
@@ -67,11 +77,11 @@ const TEMPLATES = {
   'bio.facts': () => ({ label: { en: '', it: '' }, value: { en: '', it: '' } }),
   'performance.stats': () => ({ label: { en: '', it: '' }, value: '', tone: '' }),
   'performance.payouts': () => ({ firm: '', amount: 0, date: new Date().toISOString().slice(0, 7) }),
-  socials: () => ({ id: 'link' + Date.now().toString(36), label: '', handle: '', url: 'https://', color: '#ffffff', desc: { en: '', it: '' } }),
+  socials: () => ({ id: 'link' + Date.now().toString(36), icon: 'instagram', label: '', handle: '', url: 'https://', color: '#ffffff', desc: { en: '', it: '' } }),
 };
 
 // ---------- render ----------
-const openSecs = new Set(['payouts']);
+const openSecs = new Set(['payouts', 'socials']);
 function render() {
   document.querySelectorAll('details.a-sec').forEach((d) => (d.open ? openSecs.add(d.id.slice(4)) : openSecs.delete(d.id.slice(4))));
   const p = state.performance;
@@ -126,7 +136,13 @@ function render() {
           ${field('Handle', `socials.${i}.handle`, { ph: '@vkeq' })}
           ${field('Colore cristallo', `socials.${i}.color`, { type: 'color' })}
         </div>
-        ${field('Link', `socials.${i}.url`, { type: 'url', ph: 'https://' })}
+        <div class="a-bi">
+          ${field('Link', `socials.${i}.url`, { type: 'url', ph: 'https://' })}
+          <label class="a-field"><span>Logo 3D</span>
+            <select data-path="socials.${i}.icon">${LOGO_IDS.map((id) => `<option value="${id}" ${s.icon === id ? 'selected' : ''}>${id}</option>`).join('')}
+              <option value="" ${!s.icon ? 'selected' : ''}>cristallo semplice</option>
+            </select></label>
+        </div>
         ${bi('Descrizione', `socials.${i}.desc`)}
         ${listTools('socials', i, state.socials.length)}
       </div>`,
@@ -140,23 +156,16 @@ function render() {
       `${payouts}<button class="a-add" data-add="performance.payouts">+ Aggiungi payout</button>`,
     ),
     section(
-      'stats',
-      'Statistiche',
-      `${bi('Periodo', 'performance.period', { ph: 'Jan 2025 – Oct 2025' })}${stats}<button class="a-add" data-add="performance.stats">+ Aggiungi statistica</button>`,
-    ),
-    section(
-      'equity',
-      'Equity curve',
-      `${field('Saldo cumulativo, un valore per giorno (separati da virgola o a capo)', 'performance.equity', { kind: 'numbers', rows: 5 })}
-       <canvas id="a-eq" width="300" height="90"></canvas>
-       <p class="muted">Puoi incollare direttamente una colonna da Excel / Google Sheets.</p>`,
-    ),
-    section('bio', 'Chi sono', `${field('Iniziale avatar', 'bio.avatarInitial')}${bi('Paragrafi (riga vuota = nuovo paragrafo)', 'bio.paragraphs', { kind: 'paras', rows: 7 })}<h3>Info rapide</h3>${facts}<button class="a-add" data-add="bio.facts">+ Aggiungi info</button>`),
-    section(
       'socials',
       `Social <em>${state.socials.length}/${MAX_SOCIALS}</em>`,
       `${socials}${state.socials.length < MAX_SOCIALS ? '<button class="a-add" data-add="socials">+ Aggiungi social</button>' : '<p class="muted">Massimo 6 social (uno per piedistallo).</p>'}`,
     ),
+    section(
+      'stats',
+      'Statistiche',
+      `${bi('Periodo', 'performance.period', { ph: 'Jan 2025 – Oct 2025' })}${stats}<button class="a-add" data-add="performance.stats">+ Aggiungi statistica</button>`,
+    ),
+    section('bio', 'Chi sono', `${field('Iniziale avatar', 'bio.avatarInitial')}${bi('Paragrafi (riga vuota = nuovo paragrafo)', 'bio.paragraphs', { kind: 'paras', rows: 7 })}<h3>Info rapide</h3>${facts}<button class="a-add" data-add="bio.facts">+ Aggiungi info</button>`),
     section(
       'general',
       'Generale',
@@ -166,6 +175,13 @@ function render() {
          .map((c) => `<option ${cur === c ? 'selected' : ''}>${c}</option>`)
          .join('')}</select></label>
        ${bi('Disclaimer', 'performance.disclaimer', { rows: 3 })}`,
+    ),
+    section(
+      'equity',
+      'Equity curve',
+      `${field('Saldo cumulativo, un valore per giorno (separati da virgola o a capo)', 'performance.equity', { kind: 'numbers', rows: 5 })}
+       <canvas id="a-eq" width="300" height="90"></canvas>
+       <p class="muted">Puoi incollare direttamente una colonna da Excel / Google Sheets.</p>`,
     ),
   ].join('');
 
@@ -231,7 +247,7 @@ $('#a-main').addEventListener('click', (e) => {
 
 function changed() {
   dirty = JSON.stringify(state) !== JSON.stringify(original);
-  store(DRAFT_KEY, state);
+  saveDraft();
   updateStatus();
 }
 
@@ -263,16 +279,10 @@ function validate() {
 
 // Preview: open the dungeon with the draft
 $('#a-preview').addEventListener('click', () => {
-  store(DRAFT_KEY, state);
+  saveDraft();
   window.open('/?draft=1', 'vkeq-preview');
 });
 
-// Save to disk (only when running the local dev server)
-fetch('/__admin/save', { method: 'GET' })
-  .then((r) => {
-    if (r.status === 204) $('#a-save').hidden = false;
-  })
-  .catch(() => {});
 $('#a-save').addEventListener('click', async () => {
   if (!validate()) return;
   const r = await fetch('/__admin/save', { method: 'POST', body: JSON.stringify(state) });
@@ -359,6 +369,10 @@ $('#a-menu').addEventListener('click', async (e) => {
     changed();
     render();
   } else if (act === 'github') openGh();
+  else if (act === 'logout') {
+    store(GH_KEY, { ...ghSettings(), token: '' });
+    location.reload();
+  }
 });
 $('#a-file').addEventListener('change', async (e) => {
   const f = e.target.files[0];
@@ -379,4 +393,50 @@ window.addEventListener('beforeunload', (e) => {
   if (dirty) e.preventDefault();
 });
 
-render();
+// ---------- Login ----------
+// On the live site the admin "logs in" with a GitHub token that can write to the repo:
+// without it nothing can be changed. On the local dev server no login is needed.
+function showLogin(error = '') {
+  document.querySelector('.a-actions').hidden = true;
+  const s = ghSettings();
+  $('#a-status').textContent = '';
+  $('#a-main').innerHTML = `
+    <form class="a-login" id="a-login">
+      <h2>Accesso admin</h2>
+      <p>Accedi con il tuo token GitHub. Serve un token <b>fine-grained</b> con permesso
+         <b>Contents: Read and write</b> solo sul repository del sito.
+         <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Crea un token</a></p>
+      <label class="a-field"><span>Repository</span><input id="l-repo" value="${esc(s.repo)}" /></label>
+      <label class="a-field"><span>Token</span><input id="l-token" type="password" autocomplete="current-password" placeholder="github_pat_..." /></label>
+      ${error ? `<p class="a-err">${esc(error)}</p>` : ''}
+      <button class="a-btn gold" type="submit">Accedi</button>
+      <p class="muted">Il token resta salvato solo in questo browser. Puoi uscire in qualsiasi momento dal menu.</p>
+    </form>`;
+  $('#a-login').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const repo = $('#l-repo').value.trim();
+    const token = $('#l-token').value.trim();
+    try {
+      const r = await fetch(`https://api.github.com/repos/${repo}`, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' } });
+      if (!r.ok) throw new Error(r.status === 404 ? 'Repository non trovato o token senza accesso.' : `Token non valido (${r.status}).`);
+      const info = await r.json();
+      if (!info.permissions?.push) throw new Error('Il token può leggere ma non scrivere: dai il permesso "Contents: Read and write".');
+      store(GH_KEY, { ...ghSettings(), repo, token, branch: info.default_branch || 'main' });
+      document.querySelector('.a-actions').hidden = false;
+      render();
+    } catch (err) {
+      showLogin(err.message);
+    }
+  });
+}
+
+async function boot() {
+  let dev = false;
+  try {
+    dev = (await fetch('/__admin/save')).status === 204;
+  } catch {}
+  $('#a-save').hidden = !dev;
+  if (!dev && !ghSettings().token) return showLogin();
+  render();
+}
+boot();

@@ -127,8 +127,17 @@ kbd {
   height: 12px;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 6' shape-rendering='crispEdges'%3E%3Cpath fill='%23efe6ff' d='M2 0h4v4h-1v-3h-2v4h-1v1h-2v-2h2z M4 3h2v2h-2z'/%3E%3C/svg%3E");
 }
-#btn-mute.off .note {
-  opacity: 0.35;
+#btn-music.off .note,
+#btn-sfx.off .speaker {
+  opacity: 0.3;
+}
+.speaker {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background: no-repeat center / contain;
+  image-rendering: pixelated;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 6' shape-rendering='crispEdges'%3E%3Cpath fill='%23efe6ff' d='M0 2h1v2h-1z M1 2h1v2h-1z M2 1h1v4h-1z M3 0h1v6h-1z M5 1h1v1h-1z M5 4h1v1h-1z M5 2h1v2h-1z'/%3E%3C/svg%3E");
 }
 .hud-right {
   position: absolute;
@@ -457,7 +466,7 @@ kbd {
 }
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -614,7 +623,6 @@ canvas.equity.big {
   html, body { font-size: 17px; }
   #hud-tag { font-size: 14px; }
   #minimap { width: 123px; height: 81px; }
-  .stats { grid-template-columns: 1fr 1fr; }
   .stat b { font-size: 8px; line-height: 16px; }
   .facts { grid-template-columns: 1fr; }
   #room-toast { font-size: 8px; line-height: 8px; }
@@ -714,5 +722,61 @@ canvas.equity.big {
   box-shadow: 0 0 0 3px #000;
 }
 #draft-badge[hidden] {
+  display: none;
+}
+
+/* Anecdote panel */
+.fact {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.fact-ico {
+  font-size: 30px;
+  line-height: 1;
+  flex: none;
+  padding: 8px;
+  background: #0e0a18;
+  border: 2px solid var(--edge);
+}
+.fact p {
+  margin: 0 !important;
+  font-size: 19px;
+}
+.btn-row {
+  display: block;
+  margin: 16px 0 0 auto;
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--accent);
+  background: #0e0a18;
+  border: 2px solid var(--edge);
+  padding: 8px 14px;
+}
+.btn-row:hover,
+.btn-row:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.logo-big,
+.logo-small {
+  image-rendering: pixelated;
+  display: block;
+}
+.logo-big {
+  width: 84px;
+  height: auto;
+  margin: 4px auto 16px;
+  filter: drop-shadow(0 0 14px var(--c));
+}
+.logo-small {
+  width: 28px;
+  height: auto;
+  flex: none;
+}
+
+#prompt kbd[hidden] {
   display: none;
 }

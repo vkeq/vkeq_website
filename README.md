@@ -5,14 +5,22 @@ muove un piccolo trader tra le stanze. Ogni stanza mostra un pezzo del mio mondo
 
 | Stanza | Oggetto | Contenuto |
 | --- | --- | --- |
-| Sala d'Ingresso | Bacheca | Benvenuto + comandi |
-| Biblioteca | Leggio con libro | Chi sono, mercati, stile |
-| Sala del Tesoro | Forziere / maxi-schermo | Statistiche, equity curve, payout |
-| Sala dei Portali | Portale / cristalli | Link ai social |
+| Sala d'Ingresso | Bacheca, barili, casse | Benvenuto + comandi, aneddoti su petrolio e futures |
+| Biblioteca | Leggio, scaffali, PC | Chi sono, citazioni di trading, aneddoti sui mercati |
+| Sala del Tesoro | Forziere, oro | Statistiche, equity curve, payout, aneddoti sull'oro |
+| Sala dei Portali | Portale, loghi 3D | Link ai social |
 
-## Modificare i contenuti
+## Modificare i contenuti (pannello admin)
 
-Tutti i testi, i numeri e i link stanno in **`src/config.js`**: modifica quel file e basta.
+Tutti i testi, i numeri e i link stanno in `src/content.json` e si modificano da **`/admin.html`**
+(payout, statistiche, social, bio, equity curve), senza toccare il codice.
+
+- **In locale** (`npm run dev`): apri `http://localhost:5173/admin.html`, modifica e premi **Salva**.
+- **Sul sito online**: apri `https://<tuo-dominio>/admin.html` e accedi con un token GitHub
+  (fine-grained, permesso *Contents: Read and write* solo su questo repository).
+  **Pubblica** fa un commit di `src/content.json`; Vercel/Netlify ricostruiscono il sito in 1-2 minuti.
+  Il token resta solo nel tuo browser: senza token nessuno può modificare il sito.
+- **Anteprima** apre il dungeon con le modifiche prima di pubblicarle.
 
 ## Sviluppo
 

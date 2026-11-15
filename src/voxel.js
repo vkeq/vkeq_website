@@ -89,8 +89,8 @@ export class VoxBatch {
     let s = seed >>> 0;
     this.rand = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
   }
-  add(x, y, z, w, h, d, color, jitter = 0.12, rotY = 0) {
-    this.items.push({ x, y, z, w, h, d, color, jitter, rotY });
+  add(x, y, z, w, h, d, color, jitter = 0.12, rotY = 0, rotZ = 0, rotX = 0) {
+    this.items.push({ x, y, z, w, h, d, color, jitter, rotY, rotZ, rotX });
   }
   build(parent) {
     if (!this.items.length) return null;
@@ -104,7 +104,7 @@ export class VoxBatch {
     const sc = new THREE.Vector3();
     const c = new THREE.Color();
     this.items.forEach((it, i) => {
-      q.setFromEuler(e.set(0, it.rotY, 0));
+      q.setFromEuler(e.set(it.rotX, it.rotY, it.rotZ, 'YXZ'));
       m.compose(p.set(it.x, it.y, it.z), q, sc.set(it.w, it.h, it.d));
       inst.setMatrixAt(i, m);
       c.set(it.color).multiplyScalar(1 - it.jitter / 2 + this.rand() * it.jitter);
@@ -135,7 +135,7 @@ export class VoxelPart {
         }
     return this;
   }
-  build(parent) {
+  build(parent, { basic = false } = {}) {
     const keys = [...this.map.keys()];
     const occupied = new Set(keys);
     // keep only voxels with at least one exposed face
@@ -144,7 +144,7 @@ export class VoxelPart {
       return [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]].some(([a, b, c]) => !occupied.has(`${x + a},${y + b},${z + c}`));
     });
     const geo = new THREE.BoxGeometry(this.u, this.u, this.u);
-    const inst = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial(), visible.length);
+    const inst = new THREE.InstancedMesh(geo, basic ? new THREE.MeshBasicMaterial() : new THREE.MeshLambertMaterial(), visible.length);
     const m = new THREE.Matrix4();
     const c = new THREE.Color();
     visible.forEach((k, i) => {

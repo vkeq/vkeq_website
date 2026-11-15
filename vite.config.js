@@ -23,7 +23,7 @@ function adminSave() {
           try {
             const data = JSON.parse(body);
             if (!data || typeof data !== 'object' || !data.performance || !data.bio) throw new Error('invalid content');
-            await writeFile(resolve(__dirname, 'src/content.json'), JSON.stringify(data, null, 2) + '\n');
+            await writeFile(resolve(import.meta.dirname, 'src/content.json'), JSON.stringify(data, null, 2) + '\n');
             res.setHeader('content-type', 'application/json');
             res.end('{"ok":true}');
           } catch (e) {
@@ -42,8 +42,8 @@ export default defineConfig({
     chunkSizeWarningLimit: 900,
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        admin: resolve(__dirname, 'admin.html'),
+        main: resolve(import.meta.dirname, 'index.html'),
+        admin: resolve(import.meta.dirname, 'admin.html'),
       },
     },
   },
