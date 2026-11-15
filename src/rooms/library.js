@@ -12,53 +12,61 @@ export function buildLibrary(ctx) {
   let seed = 11;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
 
-  // ---------- Bookshelves full of books along the north wall ----------
-  const shelf = (x) => {
+  // ---------- Two different bookshelves against the north wall ----------
+  // `cx` centre, `width` in tiles, `height`, shelf levels. Books, potions, skulls and candles.
+  const shelf = (cx, width, height, levels) => {
     const zc = 14.78; // shelf centre (back panel sits against the wall face at 14.5)
-    vb.add(x, 1.0, 14.56, 0.98, 2.0, 0.04, '#2e1c10', 0.05);
-    for (const sx of [-0.47, 0.47]) vb.add(x + sx, 1.0, zc, 0.05, 2.0, 0.46, '#5a3a22', 0.06);
-    vb.add(x, 2.02, zc, 1.0, 0.05, 0.48, '#5a3a22', 0.05);
-    vb.add(x, 2.07, zc + 0.02, 1.04, 0.04, 0.52, '#6b4528', 0.05);
-    for (const y of [0.06, 0.53, 1.01, 1.49]) {
-      vb.add(x, y, zc, 0.9, 0.04, 0.44, '#4a2e1a', 0.06);
-      // books on this shelf
-      let bx = -0.42;
-      while (bx < 0.4) {
+    const inner = width - 0.1;
+    vb.add(cx, height / 2, 14.56, width, height, 0.04, '#2e1c10', 0.05);
+    const posts = Math.max(2, Math.round(width) + 1);
+    for (let p = 0; p < posts; p++) vb.add(cx - width / 2 + 0.03 + (p * (width - 0.06)) / (posts - 1), height / 2, zc, 0.05, height, 0.46, '#5a3a22', 0.06);
+    vb.add(cx, height + 0.02, zc, width + 0.02, 0.05, 0.48, '#5a3a22', 0.05);
+    vb.add(cx, height + 0.07, zc + 0.02, width + 0.06, 0.04, 0.52, '#6b4528', 0.05);
+    const gap = (height - 0.1) / levels;
+    for (let lv = 0; lv < levels; lv++) {
+      const y = 0.06 + lv * gap;
+      vb.add(cx, y, zc, inner, 0.04, 0.44, '#4a2e1a', 0.06);
+      let bx = -inner / 2 + 0.03;
+      while (bx < inner / 2 - 0.08) {
         const r = rnd();
-        if (r < 0.07) {
+        if (r < 0.06) {
           // gap with a small object: potion, skull or candle
           const o = rnd();
           if (o < 0.4) {
             const c = ['#3ddc84', '#5ad1ff', '#ff5470'][Math.floor(rnd() * 3)];
-            lit.add(x + bx + 0.06, y + 0.1, zc + 0.05, 0.09, 0.14, 0.09, c, 0.1);
-            vb.add(x + bx + 0.06, y + 0.2, zc + 0.05, 0.04, 0.06, 0.04, '#d8d8e8', 0.05);
-            vb.add(x + bx + 0.06, y + 0.24, zc + 0.05, 0.05, 0.03, 0.05, '#7a4a28', 0.05);
+            lit.add(cx + bx + 0.06, y + 0.1, zc + 0.05, 0.09, 0.14, 0.09, c, 0.1);
+            vb.add(cx + bx + 0.06, y + 0.2, zc + 0.05, 0.04, 0.06, 0.04, '#d8d8e8', 0.05);
+            vb.add(cx + bx + 0.06, y + 0.24, zc + 0.05, 0.05, 0.03, 0.05, '#7a4a28', 0.05);
           } else if (o < 0.7) {
-            vb.add(x + bx + 0.08, y + 0.1, zc + 0.04, 0.15, 0.14, 0.15, '#e8e0cc', 0.06);
-            vb.add(x + bx + 0.04, y + 0.12, zc + 0.12, 0.04, 0.04, 0.01, '#1a1420', 0.02);
-            vb.add(x + bx + 0.11, y + 0.12, zc + 0.12, 0.04, 0.04, 0.01, '#1a1420', 0.02);
-          } else candle(ctx, x + bx + 0.07, zc + 0.05, y + 0.02, 0.14);
+            vb.add(cx + bx + 0.08, y + 0.1, zc + 0.04, 0.15, 0.14, 0.15, '#e8e0cc', 0.06);
+            vb.add(cx + bx + 0.04, y + 0.12, zc + 0.12, 0.04, 0.04, 0.01, '#1a1420', 0.02);
+            vb.add(cx + bx + 0.11, y + 0.12, zc + 0.12, 0.04, 0.04, 0.01, '#1a1420', 0.02);
+          } else candle(ctx, cx + bx + 0.07, zc + 0.05, y + 0.02, 0.14);
           bx += 0.18;
           continue;
         }
         const w = 0.05 + rnd() * 0.04;
-        const h = 0.28 + rnd() * 0.13;
+        const h = Math.min(gap - 0.08, 0.26 + rnd() * 0.14);
         const d = 0.28 + rnd() * 0.08;
         const col = BOOK_COLS[Math.floor(rnd() * BOOK_COLS.length)];
-        const lean = rnd() < 0.08 && bx > -0.3 ? 0.28 : 0;
-        const cx = x + bx + w / 2 + (lean ? 0.04 : 0);
-        vb.add(cx, y + 0.02 + h / 2 - (lean ? 0.02 : 0), zc + 0.02, w, h, d, col, 0.1, 0, lean);
-        // gold title band on the spine
-        if (!lean) vb.add(cx, y + 0.02 + h * 0.7, zc + 0.02 + d / 2 + 0.003, w * 0.8, 0.025, 0.006, '#d8b04a', 0.05);
+        const lean = rnd() < 0.07 && bx > -inner / 2 + 0.2 ? 0.28 : 0;
+        const bxc = cx + bx + w / 2 + (lean ? 0.04 : 0);
+        vb.add(bxc, y + 0.02 + h / 2 - (lean ? 0.02 : 0), zc + 0.02, w, h, d, col, 0.1, 0, lean);
+        if (!lean) vb.add(bxc, y + 0.02 + h * 0.7, zc + 0.02 + d / 2 + 0.003, w * 0.8, 0.025, 0.006, '#d8b04a', 0.05);
         bx += w + 0.008 + (lean ? 0.08 : 0);
       }
     }
-    ctx.solid(x, 15);
-    world.reserve(x, 14);
+    ctx.solid(cx, 14.76, width / 2, 0.26);
+    for (let x = Math.round(cx - width / 2 + 0.5); x <= Math.round(cx + width / 2 - 0.5); x++) world.reserve(x, 14);
   };
-  [2, 3, 4, 9, 10, 11].forEach(shelf);
-  ctx.item({ id: 'shelf-l', x: 3, z: 15.8, radius: 1.6, prompt: () => T('prompts.books'), hitBox: [3, 1, 14.8, 2.9, 2, 0.5], sound: 'shelf', action: () => actions.fact('books') });
-  ctx.item({ id: 'shelf-r', x: 10, z: 15.8, radius: 1.6, prompt: () => T('prompts.books'), hitBox: [10, 1, 14.8, 2.9, 2, 0.5], sound: 'shelf', action: () => actions.fact('books') });
+  // big shelf on the left (4 tiles wide, 5 levels), small one on the right (1.5 tiles, 3 levels)
+  shelf(3.5, 3.9, 2.0, 5);
+  shelf(10.4, 1.5, 1.25, 3);
+  // clutter on top of the small shelf
+  bookStack(ctx, 10.1, 14.8, 3, 1.3);
+  candle(ctx, 10.85, 14.8, 1.33, 0.18);
+  ctx.item({ id: 'shelf-l', x: 3.5, z: 15.8, radius: 1.9, prompt: () => T('prompts.books'), hitBox: [3.5, 1, 14.8, 3.9, 2, 0.5], sound: 'shelf', action: () => actions.fact('books') });
+  ctx.item({ id: 'shelf-r', x: 10.4, z: 15.8, radius: 1.5, prompt: () => T('prompts.books'), hitBox: [10.4, 0.7, 14.8, 1.5, 1.4, 0.5], sound: 'shelf', action: () => actions.fact('books') });
 
   // ---------- Lectern with the open "About me" book ----------
   {
@@ -88,7 +96,7 @@ export function buildLibrary(ctx) {
     const l = label({ key: 'labels.about' }, { color: '#ffd27a' });
     l.position.set(x, 1.75, z);
     scene.add(l);
-    for (const [cx, cz] of [[6, 18], [7, 18], [6, 19], [7, 19]]) ctx.solid(cx, cz);
+    ctx.solid(x, z, 0.42, 0.34);
     const light = new THREE.PointLight('#ffd27a', 4, 4, 1.8);
     light.position.set(x, 1.6, z + 0.3);
     scene.add(light);
@@ -158,7 +166,8 @@ export function buildLibrary(ctx) {
         g.material.opacity = (1 - p) * 0.35;
       }),
     );
-    for (const cx of [3, 4, 5]) for (const cz2 of [22, 23]) ctx.solid(cx, cz2);
+    ctx.solid(x, z, 0.97, 0.42);
+    ctx.solid(x, cz, 0.27, 0.27);
     ctx.item({ id: 'pc', x, z: 22.4, radius: 1.9, prompt: () => T('prompts.pc'), hitBox: [x, 0.8, z, 1.9, 1.0, 1.2], sound: 'pc', action: () => actions.fact('trading') });
   }
 
@@ -186,15 +195,15 @@ export function buildLibrary(ctx) {
     vb.add(gx, 0.95, gz, 0.04, 0.62, 0.62, '#c9a24a', 0.05, 0, 0.4); // meridian ring
     vb.add(gx, 0.45, gz, 0.08, 0.6, 0.08, '#5a3a22', 0.05);
     disc(vb, gx, 0.06, gz, 0.25, 0.08, '#4a2e1a');
-    ctx.solid(gx, gz);
+    ctx.solid(gx, gz, 0.28);
     ctx.updaters.push((t) => (globe.rotation.y = t * 0.4));
   }
 
   // ---------- Rug, book stacks, candles ----------
   rug(ctx, 4, 17, 9, 21, '#b8902c', '#25305a', '#7a5c26');
   bookStack(ctx, 11, 24, 6);
-  bookStack(ctx, 2, 18, 4);
-  bookStack(ctx, 11, 17, 3);
+  bookStack(ctx, 2.3, 19.4, 4);
+  bookStack(ctx, 8.6, 16.1, 3);
   candle(ctx, 2.3, 23.7);
   candle(ctx, 2.6, 24.2, 0, 0.16);
   candle(ctx, 10.6, 23.2);

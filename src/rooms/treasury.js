@@ -97,7 +97,7 @@ export function buildTreasury(ctx) {
     light.position.set(cx, 1.4, cz + 0.4);
     scene.add(light);
     sparkles(ctx, cx, 0.2, cz, { count: 30, radius: 1.0, height: 1.6 });
-    for (const [x, z] of [[19, 6], [20, 6], [21, 6], [19, 7], [20, 7], [21, 7]]) ctx.solid(x, z);
+    ctx.solid(cx, cz, 0.72, 0.47);
 
     // coin burst particles on open
     const coins = [];
@@ -156,26 +156,26 @@ export function buildTreasury(ctx) {
     });
   }
 
-  // ---------- Golden bull and bear statues ----------
-  statue(ctx, 16.5, 6.5, 'bull');
-  statue(ctx, 23.5, 6.5, 'bear');
+  // ---------- Golden bull and bear statues (not mirrored on purpose) ----------
+  statue(ctx, 16.2, 6.1, 'bull', -0.35);
+  statue(ctx, 24.1, 7.7, 'bear', Math.PI + 0.75);
 
-  // ---------- Gold: coin piles + bars → gold market anecdotes ----------
-  for (const [x, z] of [[15, 4], [25, 4], [15, 9], [25, 9]]) {
-    coinPile(ctx, x, z);
+  // ---------- Three gold spots scattered around the room → gold market anecdotes ----------
+  const goldSpot = (id, x, z, kind, rot = 0) => {
+    if (kind === 'coins') coinPile(ctx, x, z);
+    else goldBars(ctx, x, z, rot);
     sparkles(ctx, x, 0.1, z, { count: 8, radius: 0.5, height: 0.8 });
-    ctx.item({ id: `gold-${x}-${z}`, x, z, radius: 1.4, prompt: () => T('prompts.gold'), hitBox: [x, 0.2, z, 1, 0.5, 1], sound: 'gold', action: () => actions.fact('gold') });
-  }
-  for (const [x, z, r] of [[14, 2, 0.2], [26, 2, -0.2], [13, 11, 0.5], [27, 11, -0.4]]) {
-    goldBars(ctx, x, z, r);
-    ctx.item({ id: `bars-${x}-${z}`, x, z, radius: 1.4, prompt: () => T('prompts.gold'), hitBox: [x, 0.2, z, 0.9, 0.4, 0.9], sound: 'gold', action: () => actions.fact('gold') });
-  }
+    ctx.item({ id, x, z, radius: 1.4, prompt: () => T('prompts.gold'), hitBox: [x, 0.2, z, 1, 0.5, 1], sound: 'gold', action: () => actions.fact('gold') });
+  };
+  goldSpot('gold-coins-nw', 15.2, 3.6, 'coins');
+  goldSpot('gold-bars-e', 25.7, 4.9, 'bars', 0.45);
+  goldSpot('gold-coins-s', 17.4, 10.1, 'coins');
 
   rug(ctx, 18, 4, 22, 9, '#c9a24a', '#4e1a28', '#9a7424');
 }
 
 // Small golden voxel statue on a stone plinth.
-function statue(ctx, x, z, kind) {
+function statue(ctx, x, z, kind, rot) {
   const { scene, vb } = ctx;
   vb.add(x, 0.15, z, 0.9, 0.3, 0.6, '#4a4460', 0.08);
   vb.add(x, 0.33, z, 0.8, 0.06, 0.5, '#5c5578', 0.08);
@@ -206,10 +206,10 @@ function statue(ctx, x, z, kind) {
   const g = new THREE.Group();
   p.build(g);
   g.position.set(x, 0.36, z);
-  g.rotation.y = kind === 'bull' ? -0.5 : Math.PI + 0.5; // facing each other / the chest
+  g.rotation.y = rot;
   scene.add(g);
   const s = glow('#ffe27a', 1.2, 0.25);
   s.position.set(x, 0.8, z);
   scene.add(s);
-  ctx.solid(x, z);
+  ctx.solid(x, z, 0.5, 0.36);
 }

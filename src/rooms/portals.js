@@ -52,10 +52,8 @@ export function buildPortals(ctx) {
     vb.add(PX + Math.cos(a) * AR, PY + 0.3 + Math.sin(a) * AR * 0.95, PZ, key ? 0.7 : 0.55, key ? 0.6 : 0.42, 0.62, key ? '#5c5578' : S(), 0.08, 0, a - Math.PI / 2);
   }
   lit.add(PX, PY + 0.3 + AR * 0.95, PZ + 0.33, 0.24, 0.24, 0.06, '#d9c4ff', 0.1, 0, Math.PI / 4); // keystone gem
-  for (let x = 31; x <= 36; x++) {
-    world.reserve(x, 14);
-    ctx.solid(x, 15);
-  }
+  for (let x = 31; x <= 36; x++) world.reserve(x, 14);
+  ctx.solid(PX, 15.25, 2.22, 0.38); // steps + pillars
 
   // ---------- Portal surface (pixel swirl shader) ----------
   const portalMat = new THREE.ShaderMaterial({
@@ -141,18 +139,24 @@ export function buildPortals(ctx) {
   ctx.item({ id: 'portal', x: PX, z: 16.6, radius: 2.2, prompt: () => T('prompts.portal'), hitBox: [PX, PY, PZ, PR * 2 + 1.2, PY * 2 + 0.6, 0.8], sound: 'portal', action: actions.allSocials });
 
   // ---------- One pedestal per social, with its voxel logo floating above ----------
-  const spots = [[31, 20], [PX, 21.5], [36, 20], [30.5, 23], [36.5, 23], [PX, 18.6]];
+  // irregular altar positions and heights, like an old dungeon shrine
+  const spots = [[30.9, 19.5, 1], [34.2, 22.1, 0.78], [36.8, 18.9, 1.18], [30.5, 23.2, 0.9], [37.2, 22.7, 1.05], [33.0, 18.7, 0.85]];
   CONFIG.socials.slice(0, spots.length).forEach((s, i) => {
-    const [x, z] = spots[i];
+    const [x, z, hs] = spots[i];
+    const colH = 0.62 * hs;
+    const top = 0.2 + colH;
     disc(vb, x, 0.06, z, 0.42, 0.12, '#3a3452');
     disc(vb, x, 0.16, z, 0.34, 0.08, '#4b4466');
-    ring(vb, x, 0.5, z, 0.22, 0.62, 8, ['#4b4466', '#554e72'], 0.07);
-    disc(vb, x, 0.84, z, 0.34, 0.08, '#4b4466');
-    disc(vb, x, 0.9, z, 0.28, 0.05, '#3a3452');
+    ring(vb, x, 0.2 + colH / 2, z, 0.22, colH, 8, ['#4b4466', '#554e72'], 0.07);
+    disc(vb, x, top + 0.02, z, 0.34, 0.08, '#4b4466');
+    disc(vb, x, top + 0.08, z, 0.28, 0.05, '#3a3452');
+    // a broken chunk at the foot of some altars
+    if (i % 2 === 0) vb.add(x + 0.38, 0.06, z + 0.22, 0.16, 0.12, 0.13, '#4b4466', 0.15, i);
     ring(lit, x, 0.17, z, 0.43, 0.03, 12, s.color, 0.04, 0.1); // glowing ring in brand colour
     const logo = voxelLogo(s.icon || s.id, { u: 0.045, depth: 3 });
     const holder = new THREE.Group();
-    holder.position.set(x, 1.45, z);
+    const ly = top + 0.55;
+    holder.position.set(x, ly, z);
     if (logo) holder.add(logo);
     else {
       const c = new THREE.Mesh(new THREE.OctahedronGeometry(0.24, 0), new THREE.MeshBasicMaterial({ color: s.color }));
@@ -161,18 +165,18 @@ export function buildPortals(ctx) {
     }
     scene.add(holder);
     const gl = glow(s.color, 1.5, 0.4);
-    gl.position.set(x, 1.45, z - 0.05);
+    gl.position.set(x, ly, z - 0.05);
     scene.add(gl);
     const l2 = label(s.label, { color: s.color === '#e8e8f0' ? '#ffffff' : s.color });
-    l2.position.set(x, 2.05, z);
+    l2.position.set(x, ly + 0.6, z);
     scene.add(l2);
-    ctx.solid(x, z);
+    ctx.solid(x, z, 0.34);
     ctx.updaters.push((t) => {
       holder.rotation.y = Math.sin(t * 0.9 + i) * 0.7;
-      holder.position.y = 1.45 + Math.sin(t * 2 + i) * 0.07;
+      holder.position.y = ly + Math.sin(t * 2 + i) * 0.07;
       gl.material.opacity = 0.32 + Math.sin(t * 2.5 + i) * 0.1;
     });
-    ctx.item({ id: 'social-' + s.id, x, z, radius: 1.5, prompt: () => s.label, hitBox: [x, 0.9, z, 0.9, 1.8, 0.9], sound: () => ['crystal', i], action: () => actions.social(s) });
+    ctx.item({ id: 'social-' + s.id, x, z, radius: 1.5, prompt: () => s.label, hitBox: [x, ly / 2 + 0.2, z, 0.9, ly + 0.5, 0.9], sound: () => ['crystal', i], action: () => actions.social(s) });
   });
 
   // ---------- Glowing crystal clusters in the corners ----------

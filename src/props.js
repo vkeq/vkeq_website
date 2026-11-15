@@ -21,10 +21,9 @@ export function buildProps(scene, grid, world, actions) {
     rugCells: new Set(),
     vb: new VoxBatch(5), // regular lit voxels
     lit: new VoxBatch(6, { glow: true }), // self-illuminated voxels (gold, crystals, screens)
-    // Mark the cell(s) under a prop as blocked; half coordinates block both neighbours.
-    solid(x, z) {
-      for (const cx of new Set([Math.floor(x + 0.01), Math.ceil(x - 0.01)]))
-        for (const cz of new Set([Math.floor(z + 0.01), Math.ceil(z - 0.01)])) grid.block(Math.round(cx), Math.round(cz));
+    // Exact box footprint of a prop (half width / half depth) — the player collides with it.
+    solid(x, z, hw = 0.35, hd = hw) {
+      grid.addCollider(x, z, hw, hd);
     },
     // Register an interactable. `hitBox: [x, y, z, w, h, d]` creates an invisible click target.
     item(def) {

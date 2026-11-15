@@ -30,7 +30,16 @@ npm run dev      # http://localhost:5173
 npm run build    # sito statico in dist/
 ```
 
-`dist/` è un sito statico: si pubblica così com'è su Netlify, Vercel, GitHub Pages o Cloudflare Pages.
+## Pubblicazione (GitHub Pages)
+
+Il sito si pubblica da solo con GitHub Actions (`.github/workflows/deploy.yml`) a ogni push su `main`,
+compresi i salvataggi fatti con **Pubblica** dal pannello admin.
+
+Da fare una volta sola: *Settings → Pages → Build and deployment → Source: **GitHub Actions***.
+Il sito sarà su `https://vkeq.github.io/vkeq_website/`.
+
+Dominio personale: aggiungi il file `public/CNAME` con il dominio (es. `vkeq.com`) e configura il DNS
+come indicato da GitHub; la build passa da sola al percorso `/`.
 
 ## Comandi di gioco
 

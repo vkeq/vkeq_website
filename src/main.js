@@ -140,22 +140,24 @@ async function boot() {
       let a = THREE.MathUtils.clamp((far - dist) / 1.5, 0, 1);
       // the "press E" prompt replaces the label of the object you are standing at
       if (nearest && !UI.isPanelOpen() && Math.hypot(lv.x - nearest.x, lv.z - nearest.z) < 1.3) a = 0;
-      if (lv.z > 1 || a <= 0) {
-        el.style.opacity = 0;
-        return;
-      }
-      el.style.opacity = a;
-      el.style.transform = `translate(${Math.round((lv.x * 0.5 + 0.5) * window.innerWidth)}px, ${Math.round((-lv.y * 0.5 + 0.5) * window.innerHeight)}px) translate(-50%, -50%)`;
+      // only touch the DOM when something actually changed
+      const op = lv.z > 1 || a <= 0 ? '0' : String(Math.round(a * 20) / 20);
+      if (el.style.opacity !== op) el.style.opacity = op;
+      if (op === '0') return;
+      const tr = `translate(${Math.round((lv.x * 0.5 + 0.5) * window.innerWidth)}px, ${Math.round((-lv.y * 0.5 + 0.5) * window.innerHeight)}px) translate(-50%, -50%)`;
+      if (el.style.transform !== tr) el.style.transform = tr;
     });
   }
 
   // ---------------- Movement helpers ----------------
   const R = 0.27;
+  // walls are whole tiles; props use their exact box footprint (so you can brush past them)
   const collides = (x, z) =>
-    grid.isBlocked(Math.round(x - R), Math.round(z - R)) ||
-    grid.isBlocked(Math.round(x + R), Math.round(z - R)) ||
-    grid.isBlocked(Math.round(x - R), Math.round(z + R)) ||
-    grid.isBlocked(Math.round(x + R), Math.round(z + R));
+    grid.isWall(Math.round(x - R), Math.round(z - R)) ||
+    grid.isWall(Math.round(x + R), Math.round(z - R)) ||
+    grid.isWall(Math.round(x - R), Math.round(z + R)) ||
+    grid.isWall(Math.round(x + R), Math.round(z + R)) ||
+    grid.hitsProp(x, z, R);
 
   function lineClear(ax, az, bx, bz) {
     const n = Math.ceil(Math.hypot(bx - ax, bz - az) * 4);
@@ -396,10 +398,14 @@ async function boot() {
       speed = keys.has('shift') ? RUN_SPEED : WALK_SPEED;
       const ox = pos.x;
       const oz = pos.z;
-      const nx = pos.x + mx * speed * dt;
-      const nz = pos.z + mz * speed * dt;
-      if (!collides(nx, pos.z)) pos.x = nx;
-      if (!collides(pos.x, nz)) pos.z = nz;
+      // small sub-steps so the player slides right up to walls and props
+      const steps = Math.max(1, Math.ceil((speed * dt) / 0.04));
+      for (let k = 0; k < steps; k++) {
+        const nx = pos.x + (mx * speed * dt) / steps;
+        const nz = pos.z + (mz * speed * dt) / steps;
+        if (!collides(nx, pos.z)) pos.x = nx;
+        if (!collides(pos.x, nz)) pos.z = nz;
+      }
       // stuck while following a path → give up
       if (path && dt > 0 && pos.x === ox && pos.z === oz) {
         if (++stuckFrames > 12) stopPath();
@@ -410,7 +416,6 @@ async function boot() {
         sfx.step(surfaceAt(pos.x, pos.z));
       }
     }
-    player.root.position.copy(pos);
     player.animate(dt, speed, mx, mz, time);
 
     // ---- rooms ----
@@ -437,6 +442,29 @@ async function boot() {
       nearest = best;
       if (nearest && started) sfx.near();
     }
+    // ---- camera ----
+    // Follows the player directly (no easing) and snaps to the size of one screen pixel,
+    // so the low-res image never "swims" or keeps settling after the player stops.
+    const dist = CAM_OFFSET.length() * zoom * userZoom;
+    const px = (2 * dist * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) / renderHeight;
+    const pz = px / CAM_PITCH_SIN;
+    // the player is drawn on the same pixel grid, so it never jitters against the world
+    const qx = Math.round(pos.x / px) * px;
+    const qz = Math.round(pos.z / pz) * pz;
+    player.root.position.set(qx, 0, qz);
+    if (started) {
+      camTarget.set(qx, 0.6, qz - 0.6);
+      camera.position.copy(camTarget).addScaledVector(CAM_OFFSET, zoom * userZoom);
+    } else {
+      // slow cinematic drift during the intro
+      camTarget.set(SPAWN.x + Math.sin(time * 0.15) * 2, 0.6, SPAWN.z - 4 + Math.cos(time * 0.12) * 1.5);
+      camera.position.copy(camTarget).add(tmp.set(Math.sin(time * 0.1) * 4, 12, 10));
+    }
+    camera.lookAt(camTarget);
+    camera.updateMatrixWorld();
+    updateVision(camera, started ? pos : camTarget);
+
+    // prompt is placed after the camera moved, so it never lags one frame behind
     if (started && nearest && !UI.isPanelOpen()) {
       tmp.set(nearest.x, 2.1, nearest.z).project(camera);
       const text = typeof nearest.prompt === 'function' ? nearest.prompt() : nearest.prompt;
@@ -447,22 +475,6 @@ async function boot() {
       btnAction.hidden = true;
     }
 
-    // ---- camera ----
-    // Follows the player directly (no easing) and snaps to the size of one screen pixel,
-    // so the low-res image never "swims" or keeps settling after the player stops.
-    const dist = CAM_OFFSET.length() * zoom * userZoom;
-    const px = (2 * dist * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) / renderHeight;
-    if (started) {
-      camTarget.set(Math.round(pos.x / px) * px, 0.6, Math.round((pos.z - 0.6) / (px / CAM_PITCH_SIN)) * (px / CAM_PITCH_SIN));
-      camera.position.copy(camTarget).addScaledVector(CAM_OFFSET, zoom * userZoom);
-    } else {
-      // slow cinematic drift during the intro
-      camTarget.set(SPAWN.x + Math.sin(time * 0.15) * 2, 0.6, SPAWN.z - 4 + Math.cos(time * 0.12) * 1.5);
-      camera.position.copy(camTarget).add(tmp.set(Math.sin(time * 0.1) * 4, 12, 10));
-    }
-    camera.lookAt(camTarget);
-    camera.updateMatrixWorld();
-    updateVision(camera, started ? pos : camTarget);
 
     if (marker.visible) {
       marker.userData.t += dt;
@@ -488,6 +500,8 @@ async function boot() {
   // Debug / automated screenshot hooks
   window.__dungeon = {
     pos,
+    scene,
+    renderer,
     goTo,
     start,
     items,

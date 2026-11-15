@@ -327,52 +327,81 @@ export function setPrompt(text, screen, touch) {
   }
   p.hidden = false;
   p.querySelector('kbd').hidden = touch;
-  p.querySelector('span').textContent = text;
-  p.style.transform = `translate(${Math.round(screen.x)}px, ${Math.round(screen.y)}px) translate(-50%, -100%)`;
+  const span = p.querySelector('span');
+  if (span.textContent !== text) span.textContent = text;
+  const tr = `translate(${Math.round(screen.x)}px, ${Math.round(screen.y)}px) translate(-50%, -100%)`;
+  if (p.style.transform !== tr) p.style.transform = tr;
 }
 
 // ---------------- Minimap (fog of war) ----------------
+const FACE = ['HHHHHHHH', 'HHHHHHHH', 'HSSSSSSH', 'SGLGGLGS', 'SSSDDSSS', 'SSSSSSSS', 'SSMMMMSS', 'DDDDDDDD'];
+const FACE_COLORS = { H: '#2a1a10', S: '#e7b183', D: '#c98f62', G: '#0a0a10', L: '#6fe0ff', M: '#8a4a3a' };
 export function createMinimap(grid, items) {
   const c = $('#minimap');
   const S = 4;
   c.width = W * S;
   c.height = H * S;
   const g = c.getContext('2d');
+  // explored map is drawn once into an offscreen layer and only redrawn when it changes
+  const base = document.createElement('canvas');
+  base.width = c.width;
+  base.height = c.height;
+  const bg = base.getContext('2d');
+  const roomColor = Object.fromEntries(ROOMS.map((r) => [r.id, r.color]));
   const seen = Array.from({ length: H }, () => new Array(W).fill(false));
+  let dirty = true;
 
+  const see = (x, z) => {
+    if (seen[z] && x >= 0 && x < W && !seen[z][x]) {
+      seen[z][x] = true;
+      dirty = true;
+    }
+  };
   function reveal(px, pz, rad = 5) {
-    for (let z = pz - rad; z <= pz + rad; z++)
-      for (let x = px - rad; x <= px + rad; x++) if (seen[z] && x >= 0 && x < W && (x - px) ** 2 + (z - pz) ** 2 <= rad * rad) seen[z][x] = true;
+    for (let z = pz - rad; z <= pz + rad; z++) for (let x = px - rad; x <= px + rad; x++) if ((x - px) ** 2 + (z - pz) ** 2 <= rad * rad) see(x, z);
   }
   function revealRoom(id) {
     const r = ROOMS.find((q) => q.id === id);
     if (!r) return;
-    for (let z = r.z0 - 1; z <= r.z1 + 1; z++) for (let x = r.x0 - 1; x <= r.x1 + 1; x++) seen[z][x] = true;
+    for (let z = r.z0 - 1; z <= r.z1 + 1; z++) for (let x = r.x0 - 1; x <= r.x1 + 1; x++) see(x, z);
   }
-  function draw(px, pz, t) {
-    g.clearRect(0, 0, c.width, c.height);
+  function redrawBase() {
+    bg.clearRect(0, 0, base.width, base.height);
     for (let z = 0; z < H; z++)
       for (let x = 0; x < W; x++) {
         if (!seen[z][x]) continue;
         const v = grid.cells[z][x];
         if (v === FLOOR) {
           const rid = grid.room[z][x];
-          g.fillStyle = rid ? ROOMS.find((q) => q.id === rid).color : '#55506e';
-          g.globalAlpha = 0.55;
-          g.fillRect(x * S, z * S, S, S);
-          g.globalAlpha = 1;
+          bg.fillStyle = rid ? roomColor[rid] : '#55506e';
+          bg.globalAlpha = 0.55;
+          bg.fillRect(x * S, z * S, S, S);
+          bg.globalAlpha = 1;
         } else if (v === WALL) {
-          g.fillStyle = '#211c30';
-          g.fillRect(x * S, z * S, S, S);
+          bg.fillStyle = '#211c30';
+          bg.fillRect(x * S, z * S, S, S);
         }
       }
-    for (const it of items) {
-      if (!seen[Math.round(it.z)]?.[Math.round(it.x)]) continue;
-      g.fillStyle = '#ffe9a8';
-      g.fillRect(Math.round(it.x * S + 1), Math.round(it.z * S + 1), 2, 2);
-    }
-    g.fillStyle = Math.floor(t * 4) % 2 ? '#ffffff' : '#3ddc84';
-    g.fillRect(Math.round(px * S), Math.round(pz * S), S, S);
+    bg.fillStyle = '#ffe9a8';
+    for (const it of items) if (seen[Math.round(it.z)]?.[Math.round(it.x)]) bg.fillRect(Math.round(it.x * S + 1), Math.round(it.z * S + 1), 2, 2);
+    dirty = false;
+  }
+  function draw(px, pz, t) {
+    if (dirty) redrawBase();
+    g.clearRect(0, 0, c.width, c.height);
+    g.drawImage(base, 0, 0);
+    // player marker: the character's pixel face, like a block-game skin seen from the front
+    const P = 2; // canvas pixels per face pixel
+    const fx = Math.round(px * S + S / 2 - 4 * P);
+    const fy = Math.round(pz * S + S / 2 - 4 * P) + (Math.floor(t * 2) % 2 ? 0 : -1);
+    g.fillStyle = '#000';
+    g.fillRect(fx - 1, fy - 1, 8 * P + 2, 8 * P + 2);
+    FACE.forEach((row, y) =>
+      [...row].forEach((ch, x) => {
+        g.fillStyle = FACE_COLORS[ch];
+        g.fillRect(fx + x * P, fy + y * P, P, P);
+      }),
+    );
   }
   return { reveal, revealRoom, draw };
 }

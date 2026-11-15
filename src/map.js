@@ -51,24 +51,41 @@ export function buildGrid() {
       if (near) cells[z][x] = WALL;
     }
 
-  // blocked = walls + solid props (props mark themselves later)
+  // `blocked` is the coarse grid used by path finding: walls + cells taken by props.
+  // Props also register exact box colliders, so the player can walk right next to them.
   const blocked = cells.map((row) => row.map((v) => v !== FLOOR));
+  const colliders = [];
 
   return {
     cells,
     room,
     blocked,
+    colliders,
     isFloor: (x, z) => cells[z]?.[x] === FLOOR,
+    isWall: (x, z) => (cells[z]?.[x] ?? WALL) !== FLOOR,
     isBlocked: (x, z) => blocked[z]?.[x] ?? true,
     block: (x, z) => {
       if (blocked[z]) blocked[z][x] = true;
     },
+    // Box collider centred on (x, z) with half sizes hw, hd. Cells whose centre the player
+    // could not stand on (box grown by `pad`) are blocked for path finding.
+    addCollider(x, z, hw, hd = hw, pad = 0.27) {
+      colliders.push({ x0: x - hw, x1: x + hw, z0: z - hd, z1: z + hd });
+      for (let cz = Math.floor(z - hd - pad); cz <= Math.ceil(z + hd + pad); cz++)
+        for (let cx = Math.floor(x - hw - pad); cx <= Math.ceil(x + hw + pad); cx++)
+          if (Math.abs(cx - x) < hw + pad && Math.abs(cz - z) < hd + pad && blocked[cz]) blocked[cz][cx] = true;
+    },
+    // Does a circle of radius r at (x, z) touch any prop collider?
+    hitsProp(x, z, r) {
+      for (const c of colliders) {
+        const dx = x - Math.max(c.x0, Math.min(x, c.x1));
+        const dz = z - Math.max(c.z0, Math.min(z, c.z1));
+        if (dx * dx + dz * dz < r * r) return true;
+      }
+      return false;
+    },
     roomAt: (x, z) => room[z]?.[x] ?? null,
   };
-}
-
-export function roomById(id) {
-  return ROOMS.find((r) => r.id === id);
 }
 
 // 8-directional BFS with no corner cutting. goal(x, z) → boolean.

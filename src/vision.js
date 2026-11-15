@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 // "Torch-light" vision: everything farther than a radius from the player fades into the
-// dark, in a few hard steps so it keeps the pixel-art look. Implemented by replacing the
+// dark with a soft edge. Implemented by replacing the
 // fog chunk of every built-in material with a distance-to-player check.
 
 export const vision = {
@@ -16,7 +16,7 @@ const APPLY = `
   {
     float visD = length(vVisPos - uVisCenter);
     float vis = 1.0 - clamp((visD - uVisNear) / (uVisFar - uVisNear), 0.0, 1.0);
-    vis = floor(vis * 4.0 + 0.5) / 4.0;
+    vis = vis * vis * (3.0 - 2.0 * vis); // smooth edge: no bands that "pop" while walking
     gl_FragColor.rgb = mix(uVisColor, gl_FragColor.rgb, vis);
   }
 `;

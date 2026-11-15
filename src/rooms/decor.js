@@ -64,7 +64,7 @@ export function barrel(ctx, x, z, { tap = false, rot = 0 } = {}) {
     vb.add(x + dx * 1.3, 0.24, z + dz * 1.3, 0.05, 0.08, 0.05, '#9a9aa6', 0.1);
     vb.add(x + dx * 1.45, 0.006, z + dz * 1.45, 0.42, 0.012, 0.3, '#121016', 0.05, 0.4); // oil puddle
   }
-  ctx.solid(x, z);
+  ctx.solid(x, z, 0.3);
 }
 
 // Wooden crate with planks, frame and a stencil
@@ -98,7 +98,7 @@ export function crate(ctx, x, z, { size = 0.66, y = 0, rot = 0, straw = false } 
   vb.add(fx, yc, fz, s * 0.4, 0.05, 0.01, '#3a2614', 0.02, rot);
   vb.add(fx, yc, fz, 0.05, s * 0.4, 0.01, '#3a2614', 0.02, rot);
   if (straw) for (let i = 0; i < 9; i++) vb.add(x + (Math.random() - 0.5) * s * 0.7, y + s + 0.02, z + (Math.random() - 0.5) * s * 0.7, 0.02, 0.05, 0.22, '#e0c060', 0.2, Math.random() * TAU, 0, 0.6);
-  if (y === 0) ctx.solid(x, z);
+  if (y === 0) ctx.solid(x, z, s / 2 + 0.03);
 }
 
 export function crystalCluster(ctx, x, z, color) {
@@ -117,18 +117,18 @@ export function crystalCluster(ctx, x, z, color) {
   const g = glow(color, 1.8, 0.35);
   g.position.set(x, 0.6, z);
   scene.add(g);
-  ctx.solid(x, z);
+  ctx.solid(x, z, 0.34, 0.3);
 }
 
-export function bookStack(ctx, x, z, n = 5) {
+export function bookStack(ctx, x, z, n = 5, y0 = 0) {
   const cols = ['#8c2f39', '#2f5d8c', '#3f7d4a', '#c9a24a', '#6a3f8c', '#b5652b'];
   for (let i = 0; i < n; i++) {
     const w = 0.42 - i * 0.025;
     const rot = Math.sin(i * 3.7 + x) * 0.35;
-    ctx.vb.add(x, 0.045 + i * 0.09, z, w, 0.08, 0.3, cols[(i + Math.round(x)) % cols.length], 0.1, rot);
-    ctx.vb.add(x, 0.045 + i * 0.09, z, w - 0.04, 0.084, 0.27, '#efe3c0', 0.05, rot); // pages
+    ctx.vb.add(x, y0 + 0.045 + i * 0.09, z, w, 0.08, 0.3, cols[(i + Math.round(x)) % cols.length], 0.1, rot);
+    ctx.vb.add(x, y0 + 0.045 + i * 0.09, z, w - 0.04, 0.084, 0.27, '#efe3c0', 0.05, rot); // pages
   }
-  ctx.solid(x, z);
+  if (!y0) ctx.solid(x, z, 0.24, 0.18);
 }
 
 export function candle(ctx, x, z, y = 0, h = 0.24) {
@@ -149,7 +149,7 @@ export function goldBars(ctx, x, z, rot = 0) {
       ctx.lit.add(px, 0.06 + l * 0.12, pz, 0.24, 0.1, 0.48, '#d8a830', 0.1, rot);
       ctx.lit.add(px, 0.115 + l * 0.12, pz, 0.18, 0.012, 0.4, '#ffe27a', 0.08, rot); // bevelled top
     }
-  ctx.solid(x, z);
+  ctx.solid(x, z, 0.38, 0.3);
 }
 
 export function coinPile(ctx, x, z) {
@@ -166,7 +166,7 @@ export function coinPile(ctx, x, z) {
   // a few coin stacks and a gem
   for (const [dx, dz, n] of [[0.32, 0.25, 5], [-0.3, 0.3, 3]]) for (let i = 0; i < n; i++) lit.add(x + dx, 0.02 + i * 0.03, z + dz, 0.11, 0.025, 0.11, '#e8b838', 0.1, i);
   lit.add(x - 0.05, 0.3, z + 0.02, 0.08, 0.08, 0.08, '#ff3b6b', 0.1, 0.7, 0.6);
-  ctx.solid(x, z);
+  ctx.solid(x, z, 0.38);
 }
 
 // Floating sparkles around a point (golden twinkles), returns an updater.

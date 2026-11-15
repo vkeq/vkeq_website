@@ -68,7 +68,7 @@ export function buildEntrance(ctx) {
     vb.add(x, 2.2, z, 0.78, 0.14, 0.78, '#4a4460');
     vb.add(x, 2.33, z, 0.92, 0.12, 0.92, '#3e3854');
     vb.add(x + 0.2, 2.42, z - 0.15, 0.3, 0.06, 0.3, '#3f6b45');
-    ctx.solid(x, z);
+    ctx.solid(x, z, 0.46);
   }
 
   // Floating voxel title over the treasury corridor

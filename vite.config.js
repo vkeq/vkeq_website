@@ -37,6 +37,8 @@ function adminSave() {
 }
 
 export default defineConfig({
+  // GitHub Pages serves the site from /<repo>/ unless a custom domain is set (see .github/workflows/deploy.yml)
+  base: process.env.VITE_BASE || '/',
   plugins: [adminSave()],
   build: {
     chunkSizeWarningLimit: 900,

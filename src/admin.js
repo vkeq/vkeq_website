@@ -280,7 +280,7 @@ function validate() {
 // Preview: open the dungeon with the draft
 $('#a-preview').addEventListener('click', () => {
   saveDraft();
-  window.open('/?draft=1', 'vkeq-preview');
+  window.open('./?draft=1', 'vkeq-preview');
 });
 
 $('#a-save').addEventListener('click', async () => {
