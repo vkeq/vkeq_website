@@ -39,3 +39,8 @@ Check both 1280x800 and 390x844 (portrait uses a different camera).
 
 ## Typography
 Press Start 2P only at 8/16/24/32/64 px (otherwise it blurs). Body text uses Pixelify Sans.
+
+## Live preview on claude.ai
+`npm run build:single` writes `dist-single/vkeq-dungeon.html` (one self-contained page: inlined JS/CSS, only Google Fonts external).
+Publish that file with the Artifact tool to show the owner the site inside Claude; republish the same path to update it.
+The admin page is not part of that build (it needs the dev server or GitHub).
