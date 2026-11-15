@@ -19,7 +19,7 @@ export const IS_DRAFT = CONFIG !== content;
 
 export function money(n, { sign = false } = {}) {
   const v = Number(n) || 0;
-  const s = Math.abs(v).toLocaleString(locale(), { style: 'currency', currency: CONFIG.currency || 'USD', maximumFractionDigits: 0 });
+  const s = Math.abs(v).toLocaleString(locale(), { style: 'currency', currency: CONFIG.currency || 'USD', currencyDisplay: 'narrowSymbol', maximumFractionDigits: 0 });
   return (sign ? (v >= 0 ? '+' : '-') : v < 0 ? '-' : '') + s;
 }
 

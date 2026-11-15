@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { box, mat, label, glow, voxelText } from './voxel.js';
+import { box, mat, label, glow, voxelText, VoxBatch } from './voxel.js';
 import { CONFIG } from './config.js';
 import { t as T } from './i18n.js';
 
@@ -51,9 +51,17 @@ export function buildProps(scene, grid, world, actions) {
   for (const [x, z] of [[17, 17], [23, 17], [17, 22], [23, 22]]) {
     const g = new THREE.Group();
     g.position.set(x, 0, z);
-    box(g, 0.8, 0.2, 0.8, '#4a4460', 0, 0.1, 0);
-    box(g, 0.6, 1.8, 0.6, '#5c5578', 0, 1.1, 0);
-    box(g, 0.8, 0.2, 0.8, '#4a4460', 0, 2.05, 0);
+    const shade = ['#5c5578', '#544d6e', '#615a7e', '#4f4868'];
+    box(g, 0.9, 0.12, 0.9, '#3e3854', 0, 0.06, 0);
+    box(g, 0.76, 0.14, 0.76, '#4a4460', 0, 0.19, 0);
+    for (let i = 0; i < 5; i++) {
+      const w = 0.56 + ((i * 7 + x) % 3) * 0.03;
+      box(g, w, 0.34, w, shade[(i + z) % 4], (((i * 13 + x) % 3) - 1) * 0.015, 0.43 + i * 0.35, 0);
+    }
+    box(g, 0.08, 0.5, 0.02, '#2e2940', 0.12, 1.0, 0.3); // crack
+    box(g, 0.76, 0.14, 0.76, '#4a4460', 0, 2.2, 0);
+    box(g, 0.9, 0.12, 0.9, '#3e3854', 0, 2.33, 0);
+    box(g, 0.3, 0.12, 0.3, '#3f6b45', 0.2, 2.42, -0.15); // moss
     scene.add(g);
     solid(x, z);
   }
@@ -443,6 +451,103 @@ export function buildProps(scene, grid, world, actions) {
       items.push({ id: 'social-' + s.id, x, z, radius: 1.5, prompt: s.label, hit: g, action: () => actions.social(s) });
     });
   }
+
+  // ======================= DECOR (voxel batches) =======================
+  const vb = new VoxBatch(5);
+  const lit = new VoxBatch(6, { glow: true });
+  const rugCells = new Set();
+  const rug = (x0, z0, x1, z1, edge, fill, motif) => {
+    for (let z = z0; z <= z1; z++)
+      for (let x = x0; x <= x1; x++) {
+        rugCells.add(`${x},${z}`);
+        vb.add(x, 0.012, z, 1, 0.024, 1, fill, 0.06);
+        const inner = x > x0 && x < x1 && z > z0 && z < z1;
+        if (inner && motif && (x + z) % 2 === 0) vb.add(x, 0.026, z, 0.3, 0.01, 0.3, motif, 0.05, Math.PI / 4);
+      }
+    // thin double border
+    const cx = (x0 + x1) / 2;
+    const cz = (z0 + z1) / 2;
+    const wx = x1 - x0 + 1;
+    const wz = z1 - z0 + 1;
+    for (const inset of [0.12, 0.36]) {
+      const t = 0.1;
+      vb.add(cx, 0.03, z0 - 0.5 + inset, wx - inset * 2, 0.012, t, edge, 0.05);
+      vb.add(cx, 0.03, z1 + 0.5 - inset, wx - inset * 2, 0.012, t, edge, 0.05);
+      vb.add(x0 - 0.5 + inset, 0.03, cz, t, 0.012, wz - inset * 2, edge, 0.05);
+      vb.add(x1 + 0.5 - inset, 0.03, cz, t, 0.012, wz - inset * 2, edge, 0.05);
+    }
+    // fringe
+    for (let x = x0; x <= x1; x++)
+      for (const z of [z0 - 0.55, z1 + 0.55]) for (let i = -2; i <= 2; i++) vb.add(x + i * 0.18, 0.01, z, 0.06, 0.02, 0.12, edge);
+  };
+  const barrel = (x, z) => {
+    vb.add(x, 0.36, z, 0.5, 0.72, 0.5, '#6b4226');
+    vb.add(x, 0.36, z, 0.58, 0.4, 0.58, '#7a4c2c');
+    for (const y of [0.12, 0.6]) vb.add(x, y, z, 0.54, 0.05, 0.54, '#2e2a30', 0.05);
+    vb.add(x, 0.73, z, 0.42, 0.02, 0.42, '#4a2e1a');
+    solid(Math.round(x), Math.round(z));
+  };
+  const crate = (x, z, sz = 0.62, y0 = 0) => {
+    vb.add(x, y0 + sz / 2, z, sz, sz, sz, '#9a6a3a');
+    for (const [dx, dz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) vb.add(x + (dx * sz) / 2, y0 + sz / 2, z + (dz * sz) / 2, 0.08, sz + 0.02, 0.08, '#5a3a1e', 0.05);
+    vb.add(x, y0 + sz / 2, z + sz / 2 + 0.01, sz * 0.9, 0.07, 0.02, '#5a3a1e', 0.05, 0);
+    solid(Math.round(x), Math.round(z));
+  };
+  const crystals = (x, z, color) => {
+    const r = Math.sin(x * 12.9 + z * 78.2) * 43758.5;
+    for (let i = 0; i < 6; i++) {
+      const a = i * 1.05 + r;
+      const h = 0.35 + ((i * 37) % 7) * 0.12;
+      lit.add(x + Math.cos(a) * 0.22, h / 2, z + Math.sin(a) * 0.22, 0.14, h, 0.14, color, 0.3, a);
+    }
+    lit.add(x, 0.55, z, 0.2, 1.1, 0.2, color, 0.2, 0.4);
+    const g = glow(color, 1.6, 0.35);
+    g.position.set(x, 0.6, z);
+    scene.add(g);
+    solid(Math.round(x), Math.round(z));
+  };
+  const books = (x, z) => {
+    const cols = ['#8c2f39', '#2f5d8c', '#3f7d4a', '#c9a24a', '#6a3f8c'];
+    for (let i = 0; i < 5; i++) vb.add(x + Math.sin(i * 3) * 0.05, 0.05 + i * 0.1, z, 0.42 - i * 0.03, 0.09, 0.3, cols[i % 5], 0.1, i * 0.3);
+    solid(Math.round(x), Math.round(z));
+  };
+  const candle = (x, z) => {
+    vb.add(x, 0.12, z, 0.08, 0.24, 0.08, '#efe3c0');
+    lit.add(x, 0.28, z, 0.05, 0.08, 0.05, '#ffcc55');
+  };
+  const goldBars = (x, z) => {
+    for (let l = 0; l < 3; l++)
+      for (let i = 0; i < 3 - l; i++) lit.add(x - 0.28 + i * 0.28 + l * 0.14, 0.07 + l * 0.13, z, 0.24, 0.12, 0.5, '#f0c040', 0.15);
+    solid(Math.round(x), Math.round(z));
+  };
+
+  // Entrance: red carpet towards the treasury, barrels and crates in the corners
+  rug(19, 15, 21, 23, '#b8902c', '#6a1824', '#8e2a36');
+  barrel(15, 24);
+  barrel(15.1, 23.1);
+  crate(25, 24);
+  crate(25, 24, 0.42, 0.62);
+  crate(24, 24);
+  // Library: patterned rug, books on the floor, candles
+  rug(4, 17, 9, 21, '#b8902c', '#25305a', '#7a5c26');
+  books(11, 24);
+  books(2, 17);
+  books(10, 16);
+  for (const [x, z] of [[2.3, 23.7], [2.6, 24.2], [10.6, 22.6]]) candle(x, z);
+  // Treasury: royal rug under the chest, stacks of gold bars
+  rug(18, 4, 22, 9, '#c9a24a', '#4e1a28', '#9a7424');
+  goldBars(14, 2);
+  goldBars(26, 2);
+  goldBars(13, 11);
+  goldBars(27, 11);
+  // Portal room: glowing crystal clusters
+  crystals(29, 15, '#8a5cff');
+  crystals(38, 15, '#2ec4ff');
+  crystals(29, 24, '#2ec4ff');
+  crystals(38, 24, '#e1306c');
+  vb.build(scene);
+  lit.build(scene);
+  world.decorate(rugCells);
 
   function update(t, dt) {
     for (const u of updaters) u(t, dt);

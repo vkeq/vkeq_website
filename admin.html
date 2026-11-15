@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>vkeq · Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet" />
+  </head>
+  <body class="admin">
+    <header class="a-top">
+      <div class="a-brand">VKEQ <span>ADMIN</span></div>
+      <nav class="a-actions">
+        <button id="a-preview" class="a-btn">Anteprima</button>
+        <button id="a-save" class="a-btn gold" hidden>Salva</button>
+        <button id="a-publish" class="a-btn gold">Pubblica</button>
+        <button id="a-more" class="a-btn" aria-haspopup="true">&#8942;</button>
+        <div id="a-menu" class="a-menu" hidden>
+          <button data-act="download">Scarica JSON</button>
+          <button data-act="import">Importa JSON</button>
+          <button data-act="reset">Annulla modifiche</button>
+          <button data-act="github">Impostazioni GitHub</button>
+          <a href="/" target="_blank" rel="noopener">Apri il sito</a>
+        </div>
+      </nav>
+    </header>
+    <div id="a-status" role="status"></div>
+    <main id="a-main"></main>
+    <input type="file" id="a-file" accept="application/json" hidden />
+
+    <dialog id="a-gh">
+      <form method="dialog" class="a-dialog">
+        <h2>Pubblica su GitHub</h2>
+        <p>
+          Il sito legge i contenuti da <code>src/content.json</code>. "Pubblica" salva quel file nel repository con un commit;
+          se il sito è collegato a Vercel/Netlify/Cloudflare si aggiorna da solo in 1-2 minuti.
+        </p>
+        <label>Repository <input name="repo" placeholder="vkeq/vkeq_website" /></label>
+        <label>Branch <input name="branch" placeholder="main" /></label>
+        <label>Percorso file <input name="path" placeholder="src/content.json" /></label>
+        <label
+          >Token GitHub (fine-grained, permesso "Contents: read and write" solo su questo repo)
+          <input name="token" type="password" autocomplete="off" placeholder="github_pat_..." />
+        </label>
+        <p class="muted">Il token resta salvato solo in questo browser. Senza token nessuno può modificare il sito.</p>
+        <div class="a-row">
+          <button value="cancel" class="a-btn">Annulla</button>
+          <button value="ok" class="a-btn gold">Salva impostazioni</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="/src/admin.js"></script>
+  </body>
+</html>

@@ -620,7 +620,7 @@ canvas.equity.big {
   #room-toast { font-size: 8px; line-height: 8px; }
   #intro-title { font-size: 48px; line-height: 48px; }
   #start { font-size: 8px; line-height: 16px; }
-  .payouts div { grid-template-columns: 76px 1fr auto; }
+  .payouts div { grid-template-columns: 92px 1fr auto; white-space: nowrap; }
 }
 
 @media (prefers-reduced-motion: reduce) {

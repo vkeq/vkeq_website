@@ -59,6 +59,7 @@ async function boot() {
   const world = buildWorld(scene, grid, tex);
 
   const player = createPlayer();
+  player.root.scale.setScalar(1.12);
   scene.add(player.root);
   // warm lantern that follows the player so every corner stays readable
   const lantern = new THREE.PointLight('#ffd9a0', 7, 7, 1.4);

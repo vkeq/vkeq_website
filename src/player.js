@@ -1,7 +1,26 @@
 import * as THREE from 'three';
-import { box, mat } from './voxel.js';
+import { VoxelPart } from './voxel.js';
 
-const U = 0.07; // size of one character voxel
+const U = 0.047; // one character voxel
+
+const C = {
+  skin: '#e7b183',
+  skinDark: '#c98f62',
+  hair: '#2a1a10',
+  hairHi: '#4a3020',
+  jacket: '#24325e',
+  jacketHi: '#33467e',
+  lapel: '#18213f',
+  shirt: '#f2f2f2',
+  tie: '#d0302a',
+  tieDark: '#9a1f1b',
+  pants: '#1b1e2e',
+  shoe: '#0d0d12',
+  sole: '#3a3a46',
+  gold: '#f5c542',
+  lens: '#0a0a10',
+  glint: '#6fe0ff',
+};
 
 // Voxel trader: navy suit, white shirt, red tie, shades, gold watch.
 export function createPlayer() {
@@ -9,47 +28,86 @@ export function createPlayer() {
   const body = new THREE.Group();
   root.add(body);
 
-  const limb = (w, h, d, color, x, y, z) => {
-    // pivot at the top of the limb so it swings naturally
-    const pivot = new THREE.Group();
-    pivot.position.set(x * U, y * U, z * U);
-    box(pivot, w * U, h * U, d * U, color, 0, (-h / 2) * U, 0);
-    body.add(pivot);
-    return pivot;
+  const pivot = (x, y, z) => {
+    const g = new THREE.Group();
+    g.position.set(x * U, y * U, z * U);
+    body.add(g);
+    return g;
   };
 
-  const legL = limb(2.4, 5, 2.4, '#1b1d2b', -1.4, 5, 0);
-  const legR = limb(2.4, 5, 2.4, '#1b1d2b', 1.4, 5, 0);
-  box(legL, 2.6 * U, 1 * U, 3.2 * U, '#0c0c12', 0, -5 * U, 0.4 * U);
-  box(legR, 2.6 * U, 1 * U, 3.2 * U, '#0c0c12', 0, -5 * U, 0.4 * U);
+  // ---- legs (pivot at hip) ----
+  const leg = (side) => {
+    const p = new VoxelPart(U, side > 0 ? 11 : 12);
+    p.fill(-1.5, -9, -1.5, 3, 9, 3, C.pants);
+    p.fill(-1.5, -9, -1.5, 3, 2, 4, C.shoe);
+    p.fill(-1.5, -9, -1.5, 3, 1, 4, C.sole);
+    p.fill(-1.5, -3, 0.5, 3, 1, 1, '#14172a'); // knee crease
+    const g = pivot(side * 2, 9, 0);
+    p.build(g);
+    return g;
+  };
+  const legL = leg(-1);
+  const legR = leg(1);
 
-  // torso
-  box(body, 6 * U, 6 * U, 3.2 * U, '#22305a', 0, 8 * U, 0);
-  box(body, 2 * U, 4.2 * U, 0.2 * U, '#f2f2f2', 0, 8.9 * U, 1.65 * U); // shirt
-  box(body, 0.8 * U, 3.6 * U, 0.3 * U, '#d0302a', 0, 8.6 * U, 1.75 * U); // tie
-  box(body, 6.2 * U, 0.8 * U, 3.4 * U, '#151a30', 0, 5.4 * U, 0); // belt
+  // ---- torso ----
+  const torso = new VoxelPart(U, 21);
+  torso.fill(-3.5, 9, -2, 7, 8, 4, C.jacket);
+  torso.fill(-3.5, 16, -2, 7, 1, 4, C.jacketHi); // shoulders
+  torso.fill(-1.5, 12, 1, 3, 5, 1, C.shirt);
+  torso.fill(-2.5, 12, 1, 1, 5, 1, C.lapel);
+  torso.fill(1.5, 12, 1, 1, 5, 1, C.lapel);
+  torso.fill(-0.5, 10, 1, 1, 6, 1, C.tie);
+  torso.fill(-0.5, 16, 1, 1, 1, 1, C.tieDark);
+  torso.fill(-0.5, 10, 1.5, 1, 1, 1, C.tieDark); // tie tip sticks out a bit
+  torso.fill(2.5, 14, 1, 1, 1, 1, C.gold); // pocket square
+  torso.fill(-3.5, 9, -2, 7, 1, 4, '#121524'); // belt
+  torso.fill(-0.5, 9, 1, 1, 1, 1, C.gold); // buckle
+  torso.fill(-1.5, 17, -1.5, 3, 1, 3, C.skin); // neck
+  torso.fill(-1.5, 17, 0.5, 3, 1, 1, C.shirt); // collar
+  torso.build(body);
 
-  const armL = limb(2, 5.6, 2.2, '#22305a', -4, 10.8, 0);
-  const armR = limb(2, 5.6, 2.2, '#22305a', 4, 10.8, 0);
-  box(armL, 2 * U, 1 * U, 2.2 * U, '#e3b07a', 0, -6 * U, 0);
-  box(armR, 2 * U, 1 * U, 2.2 * U, '#e3b07a', 0, -6 * U, 0);
-  box(armR, 2.2 * U, 0.7 * U, 2.4 * U, '#f5c542', 0, -5.2 * U, 0, { emissive: '#5a4210' }); // gold watch
+  // ---- arms (pivot at shoulder) ----
+  const arm = (side) => {
+    const p = new VoxelPart(U, side > 0 ? 31 : 32);
+    p.fill(-1, -7, -1.5, 2, 7, 3, C.jacket);
+    p.fill(-1, 0 - 1, -1.5, 2, 1, 3, C.jacketHi);
+    p.fill(-1, -7, -1.5, 2, 1, 3, side < 0 ? C.gold : C.shirt); // gold watch on the left wrist
+    p.fill(-1, -9, -1.5, 2, 2, 3, C.skin);
+    p.fill(-1, -9, -1.5, 2, 1, 3, C.skinDark);
+    const g = pivot(side * 4.5, 16.5, 0);
+    p.build(g);
+    return g;
+  };
+  const armL = arm(-1);
+  const armR = arm(1);
 
-  // head
-  const head = new THREE.Group();
-  head.position.y = 11 * U;
-  body.add(head);
-  box(head, 5 * U, 5 * U, 5 * U, '#e3b07a', 0, 2.5 * U, 0);
-  box(head, 5.3 * U, 1.6 * U, 5.3 * U, '#2a1a10', 0, 4.6 * U, -0.1 * U); // hair top
-  box(head, 5.3 * U, 3 * U, 1.2 * U, '#2a1a10', 0, 3.2 * U, -2.3 * U); // hair back
-  box(head, 5.2 * U, 1 * U, 0.4 * U, '#0a0a10', 0, 2.9 * U, 2.6 * U); // shades
-  box(head, 1.4 * U, 0.5 * U, 0.2 * U, '#5ad1ff', -1.2 * U, 3.1 * U, 2.82 * U, { emissive: '#1a6080' });
-  box(head, 1.4 * U, 0.5 * U, 0.2 * U, '#5ad1ff', 1.2 * U, 3.1 * U, 2.82 * U, { emissive: '#1a6080' });
-  box(head, 1.6 * U, 0.4 * U, 0.2 * U, '#9a5a40', 0, 1.1 * U, 2.6 * U); // mouth
+  // ---- head (pivot at neck) ----
+  const head = pivot(0, 18, 0);
+  const h = new VoxelPart(U, 41);
+  h.fill(-3.5, 0, -3.5, 7, 7, 7, C.skin);
+  h.fill(-3.5, 5, -3.5, 7, 2, 7, C.hair);
+  h.fill(-3.5, 7, -3.5, 7, 1, 6, C.hair);
+  h.fill(-2.5, 7, -2.5, 4, 1, 3, C.hairHi);
+  h.fill(-2.5, 6, 3.5, 5, 2, 1, C.hair); // quiff
+  h.fill(-1.5, 7, 3.5, 3, 1, 1, C.hairHi);
+  h.fill(-3.5, 1, -3.5, 7, 5, 1, C.hair); // back
+  h.fill(-3.5, 2, -3.5, 1, 4, 4, C.hair); // sides
+  h.fill(2.5, 2, -3.5, 1, 4, 4, C.hair);
+  h.fill(-3.5, 3, 3.5, 7, 2, 1, C.lens); // sunglasses
+  h.fill(-3.5, 3, -0.5, 1, 1, 4, C.lens); // arms of the shades
+  h.fill(2.5, 3, -0.5, 1, 1, 4, C.lens);
+  h.fill(-2.5, 4, 3.5, 1, 1, 1, C.glint);
+  h.fill(1.5, 4, 3.5, 1, 1, 1, C.glint);
+  h.fill(-0.5, 2, 3.5, 1, 1, 1, C.skinDark); // nose
+  h.fill(-1.5, 1, 2.5, 3, 1, 1, '#8a4a3a'); // mouth
+  h.fill(-4.5, 2, -0.5, 1, 2, 1, C.skin); // ears
+  h.fill(3.5, 2, -0.5, 1, 2, 1, C.skin);
+  h.fill(-3.5, 0, -2.5, 7, 1, 5, C.skinDark); // jaw shade
+  h.build(head);
 
   // blob shadow
   const shadow = new THREE.Mesh(
-    new THREE.CircleGeometry(0.32, 12),
+    new THREE.CircleGeometry(0.34, 12),
     new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.45, depthWrite: false }),
   );
   shadow.rotation.x = -Math.PI / 2;
@@ -78,8 +136,11 @@ export function createPlayer() {
     legR.rotation.x = -s * 0.7;
     armL.rotation.x = -s * 0.6;
     armR.rotation.x = s * 0.6;
-    body.position.y = moving ? Math.abs(Math.cos(walkT)) * 0.04 : Math.sin(t * 2) * 0.012;
-    head.rotation.z = moving ? 0 : Math.sin(t * 0.9) * 0.04;
+    armL.rotation.z = moving ? 0 : -0.04;
+    armR.rotation.z = moving ? 0 : 0.04;
+    body.position.y = moving ? Math.abs(Math.cos(walkT)) * 0.045 : Math.sin(t * 2) * 0.012;
+    head.rotation.y = moving ? 0 : Math.sin(t * 0.7) * 0.25;
+    head.rotation.z = moving ? Math.sin(walkT) * 0.04 : 0;
   }
 
   return { root, animate };

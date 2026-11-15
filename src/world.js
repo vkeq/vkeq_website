@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { W, H, ROOMS, FLOOR, WALL } from './map.js';
 import { rng } from './textures.js';
-import { box, mat, glow } from './voxel.js';
+import { box, mat, glow, VoxBatch } from './voxel.js';
 
 const TALL = 2.0;
 const LOW = 0.35;
@@ -188,5 +188,62 @@ export function buildWorld(scene, grid, tex) {
     }
   }
 
-  return { torches, update, reserve: (x, z) => reserved.add(`${x},${z}`), placeTorches, TALL };
+  // Extra voxel detail: bricks sticking out of walls, uneven wall tops, rubble, moss, cracks.
+  function decorate(rugCells = new Set()) {
+    const vb = new VoxBatch(77);
+    const rr = rng(99);
+    const wallCol = ['#4e4664', '#57506f', '#433c58'];
+    const pick = (a) => a[Math.floor(rr() * a.length)];
+    for (let z = 0; z < H; z++)
+      for (let x = 0; x < W; x++) {
+        if (grid.cells[z][x] !== WALL) continue;
+        const low = grid.cells[z - 1]?.[x] === FLOOR;
+        const hgt = low ? LOW : TALL;
+        // faces that look into a room
+        const faces = [];
+        if (grid.cells[z + 1]?.[x] === FLOOR) faces.push([0, 1]);
+        if (grid.cells[z]?.[x + 1] === FLOOR) faces.push([1, 0]);
+        if (grid.cells[z]?.[x - 1] === FLOOR) faces.push([-1, 0]);
+        if (!low) {
+          for (const [fx, fz] of faces) {
+            const n = 2 + Math.floor(rr() * 3);
+            for (let i = 0; i < n; i++) {
+              const along = (rr() - 0.5) * 0.7;
+              const y = 0.15 + Math.floor(rr() * 7) * 0.25;
+              const w = 0.22 + rr() * 0.22;
+              const px = x + fx * 0.52 + (fz ? along : 0);
+              const pz = z + fz * 0.52 + (fx ? along : 0);
+              vb.add(px, y, pz, fz ? w : 0.06, 0.12, fx ? w : 0.06, pick(wallCol));
+            }
+            // skirting stones along the bottom
+            vb.add(x + fx * 0.53, 0.07, z + fz * 0.53, fz ? 1 : 0.1, 0.14, fx ? 1 : 0.1, '#3a3450', 0.2);
+          }
+          // uneven, crenellated top
+          if (rr() < 0.55) {
+            const w = 0.3 + rr() * 0.3;
+            vb.add(x + (rr() - 0.5) * 0.4, hgt + 0.08, z + (rr() - 0.5) * 0.4, w, 0.16, w, '#47405e');
+          }
+          if (rr() < 0.25) vb.add(x + (rr() - 0.5) * 0.5, hgt + 0.05, z + (rr() - 0.5) * 0.5, 0.2, 0.1, 0.2, '#3f6b45');
+        } else if (rr() < 0.5) {
+          vb.add(x + (rr() - 0.5) * 0.4, hgt + 0.06, z + (rr() - 0.5) * 0.3, 0.3, 0.12, 0.3, '#47405e');
+        }
+      }
+    // floor rubble, raised stones and moss
+    for (let z = 0; z < H; z++)
+      for (let x = 0; x < W; x++) {
+        if (grid.cells[z][x] !== FLOOR || grid.isBlocked(x, z) || rugCells.has(`${x},${z}`)) continue;
+        const rid = grid.room[z][x];
+        const style = rid ? ROOMS.find((q) => q.id === rid).floor : 'floorStone';
+        const tone = { floorStone: '#4a4560', floorGold: '#6a5236', floorWood: '#7a4c2c', floorCrystal: '#3a2a62' }[style];
+        if (rr() < 0.18) {
+          const w = 0.25 + rr() * 0.25;
+          vb.add(x + (rr() - 0.5) * 0.5, 0.02, z + (rr() - 0.5) * 0.5, w, 0.04, w * (0.6 + rr() * 0.5), tone, 0.25);
+        }
+        if (rr() < 0.12) for (let i = 0; i < 3; i++) vb.add(x + (rr() - 0.5) * 0.8, 0.04, z + (rr() - 0.5) * 0.8, 0.08, 0.08, 0.08, '#5a5470', 0.3);
+        if (style !== 'floorWood' && style !== 'floorCrystal' && rr() < 0.06) vb.add(x + (rr() - 0.5) * 0.5, 0.012, z + (rr() - 0.5) * 0.5, 0.35, 0.02, 0.25, '#2f5a36', 0.3);
+      }
+    vb.build(scene);
+  }
+
+  return { torches, update, reserve: (x, z) => reserved.add(`${x},${z}`), placeTorches, decorate, TALL };
 }

@@ -8,7 +8,12 @@ description: How the vkeq 3D pixel dungeon website is built and how to change it
 Vite + Three.js, no framework. Low-res render (canvas at 1/2-1/4 size, `image-rendering: pixelated`) gives the pixel look.
 
 ## Files
-- `src/config.js` – ALL user content (bio, stats, equity array, payouts, socials). Change content here only.
+- `src/content.json` – ALL user content (bio, stats, equity array, payouts, socials). Text fields are `{ "en": ..., "it": ... }`.
+  Edited by the owner through `/admin.html` (`src/admin.js`): Preview stores a draft in localStorage and opens `/?draft=1`;
+  Save (dev only) POSTs to the `/__admin/save` middleware in `vite.config.js`; Publish commits the file through the GitHub contents API.
+- `src/config.js` – loads content (or the draft), money/month formatting, `auto:payouts` / `auto:payoutsTotal` stat values.
+- `src/i18n.js` – UI strings (`t('key')`), content picker `tr(field)`, `setLang`/`onLangChange`. English default, Italian alternative.
+  Every visible string must exist in BOTH `en` and `it`; panels re-render on language change via `panel()` in ui.js.
 - `src/map.js` – tile grid. `ROOMS` / `CORRIDORS` rectangles (x = column, z = row, cell (x,z) centred at world (x,0,z)). Walls are generated around floor. `findPath` = 8-dir BFS.
 - `src/world.js` – floors/walls (InstancedMesh), torches (auto-placed on north walls, skips `world.reserve(x,z)` cells), dust + embers.
   Walls with floor directly north are drawn LOW (cut-away) so they never hide the player – keep that rule.
@@ -16,7 +21,8 @@ Vite + Three.js, no framework. Low-res render (canvas at 1/2-1/4 size, `image-re
   Call `grid.block(x,z)` (via `solid`) for cells a prop occupies; `world.reserve(x,z)` for wall cells it covers.
   `radius` must be reachable: some free cell centre must be closer than `radius - 0.15`, or click-to-walk fails.
 - `src/ui.js` – HTML panels (`openPanel`), HUD, minimap, pixel equity chart. `src/voxel.js` – `box()`, `glow()`, `voxelText()`, `label()` (HTML labels anchored to 3D objects).
-- `src/player.js` – voxel trader model + walk animation. `src/audio.js` – WebAudio chiptune sfx.
+- `src/player.js` – voxel trader built with `VoxelPart` (per-voxel shading) + walk animation.
+- Decor: `VoxBatch` (voxel.js) merges many boxes into one InstancedMesh; rugs/barrels/crystals in props.js, wall/floor detail in `world.decorate()`. `src/audio.js` – WebAudio chiptune sfx.
 
 ## Adding a room
 1. Add a rect to `ROOMS` (with `floor` texture key from `textures.js` and minimap `color`) and a `CORRIDORS` rect joining it; enlarge `W`/`H` if needed.
@@ -30,3 +36,6 @@ Start `npm run dev -- --port 5173`, then use Playwright (pre-installed) with
 `chromium.launch({ args: ['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader'] })`.
 Press Enter to leave the intro; `window.__dungeon.teleport(x, z)` jumps the player, `window.__dungeon.goTo(id)` walks to an interactable.
 Check both 1280x800 and 390x844 (portrait uses a different camera).
+
+## Typography
+Press Start 2P only at 8/16/24/32/64 px (otherwise it blurs). Body text uses Pixelify Sans.
