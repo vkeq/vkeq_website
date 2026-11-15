@@ -8,6 +8,8 @@ import { createPlayer } from './player.js';
 import { initAudio, sfx, toggleMute, isMuted } from './audio.js';
 import * as UI from './ui.js';
 import { labels } from './voxel.js';
+import { t, onLangChange } from './i18n.js';
+import { IS_DRAFT } from './config.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -15,7 +17,7 @@ async function boot() {
   // Pixel font must be ready before we rasterise labels and voxel text.
   try {
     await Promise.race([
-      Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('20px "VT323"')]),
+      Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('600 16px "Pixelify Sans"')]),
       new Promise((r) => setTimeout(r, 2500)),
     ]);
   } catch {}
@@ -82,6 +84,8 @@ async function boot() {
 
   UI.initPanel();
   UI.initHUD();
+  UI.initLangSwitch();
+  $('#draft-badge').hidden = !IS_DRAFT;
   const minimap = UI.createMinimap(grid, items);
 
   // HTML labels anchored to 3D objects (crisp text instead of blurry sprites)
@@ -91,11 +95,17 @@ async function boot() {
   const labelEls = labels.map((o) => {
     const d = document.createElement('div');
     d.className = 'wlabel';
-    d.textContent = o.userData.label.text;
     d.style.color = o.userData.label.color;
     labelLayer.appendChild(d);
     return d;
   });
+  const labelTexts = () =>
+    labels.forEach((o, i) => {
+      const l = o.userData.label;
+      labelEls[i].textContent = l.key ? t(l.key) : l.text;
+    });
+  labelTexts();
+  onLangChange(labelTexts);
   const lv = new THREE.Vector3();
   function updateLabels() {
     labelLayer.hidden = !started;
@@ -267,10 +277,13 @@ async function boot() {
   // ---------------- Mobile action button ----------------
   const isTouch = matchMedia('(pointer: coarse)').matches;
   const btnAction = $('#btn-action');
-  if (isTouch) {
-    $('#start').innerHTML = '&#9654; TOCCA PER ENTRARE';
-    $('.intro-hint').textContent = 'Tocca il pavimento per muoverti · tocca gli oggetti per interagire';
-  }
+  const introText = () => {
+    $('#intro-sub').textContent = t('introSub');
+    $('#start-text').textContent = '\u25B6 ' + t(isTouch ? 'introStartTouch' : 'introStart');
+    $('#intro-hint').textContent = t(isTouch ? 'introHintTouch' : 'introHint');
+  };
+  introText();
+  onLangChange(introText);
   btnAction.addEventListener('click', () => nearest && interact(nearest));
 
   $('#btn-menu').addEventListener('click', () => UI.showMenu(goTo));
@@ -303,7 +316,7 @@ async function boot() {
     sfx.room();
     $('#intro').classList.add('gone');
     $('#hud').hidden = false;
-    UI.roomToast(roomById('entrance').name);
+    UI.roomToast('entrance');
     minimap.revealRoom('entrance');
   }
   $('#start').addEventListener('click', (e) => {
@@ -389,7 +402,7 @@ async function boot() {
     const rid = grid.roomAt(Math.round(pos.x), Math.round(pos.z));
     if (rid && rid !== currentRoom) {
       currentRoom = rid;
-      UI.roomToast(roomById(rid).name);
+      UI.roomToast(rid);
       minimap.revealRoom(rid);
       sfx.room();
     }
@@ -411,7 +424,8 @@ async function boot() {
     }
     if (started && nearest && !UI.isPanelOpen()) {
       tmp.set(nearest.x, 2.1, nearest.z).project(camera);
-      UI.setPrompt(nearest.prompt, { x: (tmp.x * 0.5 + 0.5) * window.innerWidth, y: (-tmp.y * 0.5 + 0.5) * window.innerHeight });
+      const text = typeof nearest.prompt === 'function' ? nearest.prompt() : nearest.prompt;
+      UI.setPrompt(text, { x: (tmp.x * 0.5 + 0.5) * window.innerWidth, y: (-tmp.y * 0.5 + 0.5) * window.innerHeight }, isTouch);
       btnAction.hidden = !isTouch;
     } else {
       UI.setPrompt(null);

@@ -1,35 +1,50 @@
-import { CONFIG } from './config.js';
+import { CONFIG, money, payoutsTotal, monthLabel, statValue } from './config.js';
 import { W, H, ROOMS, FLOOR, WALL } from './map.js';
 import { sfx } from './audio.js';
+import { t, tr, getLang, setLang, onLangChange, locale } from './i18n.js';
 
 const $ = (s) => document.querySelector(s);
-const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 // ---------------- Panels ----------------
 let onCloseCb = null;
 let lastFocus = null;
+let rerender = null; // re-draws the open panel when the language changes
 
 export function isPanelOpen() {
   return !$('#panel').hidden;
 }
 
-export function openPanel(title, html, { onClose, wide = false, accent = '#f5c542' } = {}) {
+function openPanel(title, html, { onClose, wide = false, accent = '#f5c542', after } = {}) {
   const p = $('#panel');
-  lastFocus = document.activeElement;
+  if (p.hidden) lastFocus = document.activeElement;
   $('#panel-title').textContent = title;
   $('#panel-body').innerHTML = html;
   p.querySelector('.panel-box').classList.toggle('wide', wide);
   p.style.setProperty('--accent', accent);
-  p.hidden = false;
-  onCloseCb = onClose || null;
-  sfx.open();
-  requestAnimationFrame(() => $('#panel-close').focus());
+  $('#panel-close').setAttribute('aria-label', t('close'));
+  if (p.hidden) {
+    p.hidden = false;
+    sfx.open();
+    onCloseCb = onClose || null;
+    requestAnimationFrame(() => $('#panel-close').focus());
+  }
+  after?.();
+}
+
+// Wrap a panel renderer so it re-renders itself on language change.
+function panel(render) {
+  return (...args) => {
+    rerender = () => render(...args);
+    render(...args);
+  };
 }
 
 export function closePanel() {
   const p = $('#panel');
   if (p.hidden) return;
   p.hidden = true;
+  rerender = null;
   sfx.close();
   const cb = onCloseCb;
   onCloseCb = null;
@@ -45,135 +60,137 @@ export function initPanel() {
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closePanel();
   });
+  onLangChange(() => rerender?.());
 }
 
 // ---------------- Content panels ----------------
-export function showWelcome() {
-  openPanel(
-    'Bacheca',
-    `<p class="lead">Benvenuto nel dungeon di <b>${esc(CONFIG.name)}</b>, viandante.</p>
-     <p>Ogni stanza custodisce un pezzo del mio mondo da trader. Esplora, avvicinati agli oggetti che brillano e interagisci.</p>
-     <ul class="rooms">
-       <li><span style="color:#e0a96d">◀ Biblioteca</span> chi sono e come opero</li>
-       <li><span style="color:#f5c542">▲ Sala del Tesoro</span> performance e P&amp;L</li>
-       <li><span style="color:#b48cff">▶ Sala dei Portali</span> social e contatti</li>
-     </ul>
-     ${controlsHTML()}`,
-  );
-}
-
 export function controlsHTML() {
+  const c = t('controls');
   return `<div class="controls">
-      <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / frecce &nbsp;muoviti</div>
-      <div><kbd>Click</kbd> / tap &nbsp;vai lì</div>
-      <div><kbd>E</kbd> / <kbd>Spazio</kbd> &nbsp;interagisci</div>
-      <div><kbd>Shift</kbd> &nbsp;corri &nbsp; <kbd>M</kbd> &nbsp;menu</div>
+      <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <kbd>←</kbd><kbd>→</kbd> ${c[0]}</div>
+      <div><kbd>CLICK</kbd> ${c[1]}</div>
+      <div><kbd>E</kbd> <kbd>SPACE</kbd> ${c[2]}</div>
+      <div><kbd>SHIFT</kbd> ${c[3]} &nbsp; <kbd>M</kbd> ${c[4]}</div>
     </div>`;
 }
 
-export function showBio() {
+export const showWelcome = panel(() => {
+  openPanel(
+    t('welcomeTitle'),
+    `<p class="lead">${t('welcomeLead')(esc(CONFIG.name))}</p>
+     <p>${t('welcomeBody')}</p>
+     <ul class="rooms">${t('welcomeRooms')
+       .map(([c, name, d]) => `<li><span style="color:${c}">${name}</span> ${d}</li>`)
+       .join('')}</ul>
+     ${controlsHTML()}`,
+  );
+});
+
+export const showBio = panel(() => {
   const b = CONFIG.bio;
   openPanel(
-    b.title,
+    t('aboutTitle'),
     `<div class="bio-head">
        <div class="avatar">${esc(b.avatarInitial)}</div>
-       <div><div class="big">${esc(CONFIG.name)}</div><div class="muted">${esc(CONFIG.tagline)}</div></div>
+       <div><div class="big">${esc(CONFIG.name)}</div><div class="muted">${esc(tr(CONFIG.tagline))}</div></div>
      </div>
-     ${b.paragraphs.map((p) => `<p>${esc(p)}</p>`).join('')}
-     <div class="facts">${b.facts.map((f) => `<div><span>${esc(f.label)}</span><b>${esc(f.value)}</b></div>`).join('')}</div>`,
+     ${(tr(b.paragraphs) || []).map((p) => `<p>${esc(p)}</p>`).join('')}
+     <div class="facts">${b.facts.map((f) => `<div><span>${esc(tr(f.label))}</span><b>${esc(tr(f.value))}</b></div>`).join('')}</div>`,
     { accent: '#e0a96d' },
   );
-}
+});
 
-export function showPerformance(onClose) {
+export const showPerformance = panel((onClose) => {
   const p = CONFIG.performance;
   openPanel(
-    p.title,
-    `<div class="muted period">${esc(p.period)}</div>
+    t('performanceTitle'),
+    `<div class="muted period">${esc(tr(p.period))}</div>
      <div class="stats">${p.stats
-       .map((s) => `<div class="stat ${s.good ? 'good' : ''} ${s.bad ? 'bad' : ''}"><span>${esc(s.label)}</span><b>${esc(s.value)}</b></div>`)
+       .map((s) => `<div class="stat ${esc(s.tone || '')}"><span>${esc(tr(s.label))}</span><b>${esc(statValue(s.value))}</b></div>`)
        .join('')}</div>
-     <canvas class="equity" width="300" height="110" aria-label="Curva di equity"></canvas>
-     <h3>Payout</h3>
+     <canvas class="equity" width="300" height="110" aria-label="${t('equityAria')}"></canvas>
+     <h3>${t('payoutsTitle')}</h3>
      <div class="payouts">${p.payouts
-       .map((x) => `<div><span>${esc(x.date)}</span><span>${esc(x.firm)}</span><b>${esc(x.amount)}</b></div>`)
-       .join('')}</div>
-     <p class="disclaimer">${esc(p.disclaimer)}</p>`,
-    { onClose, wide: true },
-  );
-  drawEquity($('#panel-body canvas.equity'), p.equity);
-}
-
-export function showEquity() {
-  const p = CONFIG.performance;
-  const first = p.equity[0];
-  const last = p.equity[p.equity.length - 1];
-  const peak = Math.max(...p.equity);
-  openPanel(
-    'Equity curve',
-    `<div class="muted period">${esc(p.period)}</div>
-     <canvas class="equity big" width="300" height="140" aria-label="Curva di equity"></canvas>
-     <div class="stats three">
-       <div class="stat good"><span>Saldo finale</span><b>${fmt(last - first)}</b></div>
-       <div class="stat"><span>Picco</span><b>${fmt(peak)}</b></div>
-       <div class="stat"><span>Giorni</span><b>${p.equity.length}</b></div>
+       .map((x) => `<div><span>${esc(monthLabel(x.date))}</span><span>${esc(x.firm)}</span><b>${esc(money(x.amount))}</b></div>`)
+       .join('')}
+       <div class="total"><span></span><span>${t('payoutsTotal')}</span><b>${esc(money(payoutsTotal()))}</b></div>
      </div>
-     <p class="disclaimer">${esc(p.disclaimer)}</p>`,
-    { wide: true, accent: '#5ad1ff' },
+     <p class="disclaimer">${esc(tr(p.disclaimer))}</p>`,
+    { onClose, wide: true, after: () => drawEquity($('#panel-body canvas.equity'), p.equity) },
   );
-  drawEquity($('#panel-body canvas.equity'), p.equity);
-}
+});
 
-const fmt = (v) => (v >= 0 ? '+$' : '-$') + Math.abs(Math.round(v)).toLocaleString('it-IT');
+export const showEquity = panel(() => {
+  const p = CONFIG.performance;
+  const eq = p.equity.map(Number);
+  const first = eq[0] || 0;
+  const last = eq[eq.length - 1] || 0;
+  const peak = Math.max(...eq);
+  openPanel(
+    t('equityTitle'),
+    `<div class="muted period">${esc(tr(p.period))}</div>
+     <canvas class="equity big" width="300" height="140" aria-label="${t('equityAria')}"></canvas>
+     <div class="stats three">
+       <div class="stat ${last - first >= 0 ? 'good' : 'bad'}"><span>${t('equityFinal')}</span><b>${money(last - first, { sign: true })}</b></div>
+       <div class="stat"><span>${t('equityPeak')}</span><b>${money(peak)}</b></div>
+       <div class="stat"><span>${t('equityDays')}</span><b>${eq.length.toLocaleString(locale())}</b></div>
+     </div>
+     <p class="disclaimer">${esc(tr(p.disclaimer))}</p>`,
+    { wide: true, accent: '#5ad1ff', after: () => drawEquity($('#panel-body canvas.equity'), eq) },
+  );
+});
 
-export function showSocial(s) {
+export const showSocial = panel((s) => {
   openPanel(
     s.label,
     `<div class="social-one" style="--c:${esc(s.color)}">
        <div class="gem"></div>
        <div class="big">${esc(s.handle)}</div>
-       <p>${esc(s.desc || '')}</p>
-       <a class="btn" href="${esc(s.url)}" target="_blank" rel="noopener">Apri ${esc(s.label)} ↗</a>
+       <p>${esc(tr(s.desc))}</p>
+       <a class="btn" href="${esc(s.url)}" target="_blank" rel="noopener">${t('open')} ${esc(s.label)} ↗</a>
      </div>`,
     { accent: s.color },
   );
-}
+});
 
-export function showAllSocials() {
+export const showAllSocials = panel(() => {
   openPanel(
-    'Portale dei social',
-    `<p>Il portale si apre su tutti i miei mondi. Scegli dove andare:</p>
+    t('portalTitle'),
+    `<p>${t('portalBody')}</p>
      <div class="social-list">${CONFIG.socials
        .map(
          (s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener" style="--c:${esc(s.color)}">
             <i></i><span><b>${esc(s.label)}</b><small>${esc(s.handle)}</small></span><em>↗</em></a>`,
        )
        .join('')}</div>
-     ${CONFIG.contactEmail ? `<p class="muted">Contatti: <a href="mailto:${esc(CONFIG.contactEmail)}">${esc(CONFIG.contactEmail)}</a></p>` : ''}`,
+     ${CONFIG.contactEmail ? `<p class="muted">${t('contact')}: <a href="mailto:${esc(CONFIG.contactEmail)}">${esc(CONFIG.contactEmail)}</a></p>` : ''}`,
     { accent: '#b48cff' },
   );
-}
+});
 
-export function showMenu(go) {
+export const showMenu = panel((go) => {
+  const m = t('menuItems');
+  const icons = { bio: '📖', chest: '💰', equity: '📈', portal: '🌀', welcome: '📜' };
   openPanel(
-    'Menu',
-    `<p>Non hai voglia di esplorare? Vai dritto al punto:</p>
-     <div class="menu">
-       <button data-go="bio">📖 Chi sono</button>
-       <button data-go="chest">💰 Performance</button>
-       <button data-go="equity">📈 Equity curve</button>
-       <button data-go="portal">🌀 Social</button>
-       <button data-go="welcome">📜 Comandi</button>
-     </div>
-     <p class="muted">Suggerimento: clicca un pulsante e il tuo personaggio ti ci porta.</p>`,
+    t('menuTitle'),
+    `<p>${t('menuBody')}</p>
+     <div class="menu">${Object.keys(icons)
+       .map((k) => `<button data-go="${k}"><span class="ico">${icons[k]}</span>${m[k]}</button>`)
+       .join('')}</div>
+     <p class="muted">${t('menuHint')}</p>`,
+    {
+      after: () =>
+        $('#panel-body')
+          .querySelectorAll('button[data-go]')
+          .forEach((b) =>
+            b.addEventListener('click', () => {
+              closePanel();
+              go(b.dataset.go);
+            }),
+          ),
+    },
   );
-  $('#panel-body').querySelectorAll('button[data-go]').forEach((b) =>
-    b.addEventListener('click', () => {
-      closePanel();
-      go(b.dataset.go);
-    }),
-  );
-}
+});
 
 // Pixel-art equity chart
 export function drawEquity(canvas, data) {
@@ -181,7 +198,6 @@ export function drawEquity(canvas, data) {
   const g = canvas.getContext('2d');
   const w = canvas.width;
   const h = canvas.height;
-  g.imageSmoothingEnabled = false;
   g.fillStyle = '#0b0f14';
   g.fillRect(0, 0, w, h);
   const pad = 8;
@@ -195,13 +211,10 @@ export function drawEquity(canvas, data) {
   for (let x = 0; x < w; x++) {
     const f = (x / (w - 1)) * (data.length - 1);
     const i = Math.floor(f);
-    const v = data[i] + ((data[Math.min(i + 1, data.length - 1)] - data[i]) * (f - i));
+    const v = data[i] + (data[Math.min(i + 1, data.length - 1)] - data[i]) * (f - i);
     const y = Y(v);
-    // dithered fill under the curve
-    for (let yy = y + 2; yy < h; yy++) if ((x + yy) % 3 === 0) {
-      g.fillStyle = 'rgba(61,220,132,0.18)';
-      g.fillRect(x, yy, 1, 1);
-    }
+    g.fillStyle = 'rgba(61,220,132,0.18)';
+    for (let yy = y + 2; yy < h; yy++) if ((x + yy) % 3 === 0) g.fillRect(x, yy, 1, 1);
     g.fillStyle = '#3ddc84';
     const a = prev === null ? y : Math.min(prev, y);
     const b = prev === null ? y : Math.max(prev, y);
@@ -212,31 +225,99 @@ export function drawEquity(canvas, data) {
   g.fillRect(w - 4, Y(data[data.length - 1]) - 1, 4, 4);
 }
 
+// ---------------- Pixel flags ----------------
+// 12x8 pixel art, drawn into a canvas and scaled with image-rendering: pixelated.
+const FLAGS = {
+  it: (x) => (x < 4 ? '#009246' : x < 8 ? '#f1f2f1' : '#ce2b37'),
+  en: (x, y) => {
+    // simplified Union Jack
+    const r = '#cf142b';
+    const w = '#ffffff';
+    const b = '#00247d';
+    if (y === 3 || y === 4 || x === 5 || x === 6) return r;
+    if (y === 2 || y === 5 || x === 4 || x === 7) return w;
+    const d1 = Math.abs(x * (8 / 12) - y);
+    const d2 = Math.abs((11 - x) * (8 / 12) - y);
+    if (d1 < 0.5 || d2 < 0.5) return r;
+    if (d1 < 1.1 || d2 < 1.1) return w;
+    return b;
+  },
+};
+
+export function flagCanvas(code) {
+  const c = document.createElement('canvas');
+  c.width = 12;
+  c.height = 8;
+  const g = c.getContext('2d');
+  for (let y = 0; y < 8; y++)
+    for (let x = 0; x < 12; x++) {
+      g.fillStyle = FLAGS[code](x, y);
+      g.fillRect(x, y, 1, 1);
+    }
+  c.className = 'flag';
+  return c;
+}
+
+export function initLangSwitch() {
+  const box = $('#lang');
+  box.innerHTML = '';
+  for (const code of ['en', 'it']) {
+    const b = document.createElement('button');
+    b.dataset.lang = code;
+    b.title = code === 'en' ? 'English' : 'Italiano';
+    b.setAttribute('aria-label', b.title);
+    b.appendChild(flagCanvas(code));
+    const s = document.createElement('span');
+    s.textContent = code.toUpperCase();
+    b.appendChild(s);
+    b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setLang(code);
+      sfx.blip();
+    });
+    box.appendChild(b);
+  }
+  const sync = () => box.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.lang === getLang()));
+  sync();
+  onLangChange(sync);
+}
+
 // ---------------- HUD ----------------
+let currentRoomId = 'entrance';
 export function initHUD() {
-  $('#hud-name').textContent = CONFIG.name;
-  $('#hud-tag').textContent = CONFIG.tagline;
+  const render = () => {
+    $('#hud-name').textContent = CONFIG.name;
+    $('#hud-tag').textContent = tr(CONFIG.tagline);
+    $('#hud-room').textContent = t('rooms.' + currentRoomId);
+    $('#btn-menu').textContent = t('menu');
+    $('#btn-mute').title = t('sound');
+  };
+  render();
+  onLangChange(render);
 }
 
 let toastTimer = 0;
-export function roomToast(name) {
-  const t = $('#room-toast');
-  t.textContent = `~ ${name} ~`;
-  t.classList.remove('show');
-  void t.offsetWidth;
-  t.classList.add('show');
+export function roomToast(id) {
+  currentRoomId = id;
+  const name = t('rooms.' + id);
+  const el = $('#room-toast');
+  el.textContent = `~ ${name} ~`;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
   $('#hud-room').textContent = name;
 }
 
-export function setPrompt(text, screen) {
+export function setPrompt(text, screen, touch) {
   const p = $('#prompt');
   if (!text) {
     p.hidden = true;
     return;
   }
   p.hidden = false;
+  p.querySelector('kbd').hidden = touch;
   p.querySelector('span').textContent = text;
   p.style.transform = `translate(${Math.round(screen.x)}px, ${Math.round(screen.y)}px) translate(-50%, -100%)`;
 }

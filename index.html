@@ -1,33 +1,33 @@
 <!doctype html>
-<html lang="it">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>vkeq · Il Dungeon del Trader</title>
-    <meta name="description" content="vkeq, day trader. Esplora il mio dungeon pixelato in 3D: chi sono, performance e social." />
+    <title>vkeq · The Trader's Dungeon</title>
+    <meta name="description" content="vkeq, day trader. Explore my 3D pixel dungeon: who I am, my performance and my socials." />
     <meta name="theme-color" content="#0b0814" />
-    <meta property="og:title" content="vkeq · Il Dungeon del Trader" />
-    <meta property="og:description" content="Un mini-game 3D: esplora le stanze per scoprire chi sono, i miei risultati e i miei social." />
+    <meta property="og:title" content="vkeq · The Trader's Dungeon" />
+    <meta property="og:description" content="A 3D mini-game: explore the rooms to discover who I am, my results and my socials." />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'><rect width='16' height='16' fill='%230b0814'/><rect x='3' y='6' width='2' height='6' fill='%233ddc84'/><rect x='7' y='3' width='2' height='8' fill='%233ddc84'/><rect x='11' y='7' width='2' height='5' fill='%23ff5470'/></svg>" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <canvas id="game" aria-label="Dungeon 3D interattivo"></canvas>
+    <canvas id="game" aria-label="Interactive 3D dungeon"></canvas>
 
     <!-- HUD -->
     <div id="hud" hidden>
       <div class="hud-id">
         <div id="hud-name"></div>
         <div id="hud-tag"></div>
-        <div class="hud-room">&#x1F4CD; <span id="hud-room">Sala d'Ingresso</span></div>
+        <div class="hud-room"><i class="pin"></i><span id="hud-room"></span></div>
       </div>
       <div class="hud-right">
-        <canvas id="minimap" aria-label="Minimappa"></canvas>
+        <canvas id="minimap" aria-label="Minimap"></canvas>
         <div class="hud-buttons">
           <button id="btn-menu" title="Menu (M)">MENU</button>
-          <button id="btn-mute" title="Audio">♪</button>
+          <button id="btn-mute" title="Sound"><i class="note"></i></button>
         </div>
       </div>
       <div id="room-toast"></div>
@@ -36,14 +36,17 @@
 
     <div id="prompt" hidden><kbd>E</kbd><span></span></div>
 
+    <!-- Language switch (always visible, top right) -->
+    <div id="lang" role="group" aria-label="Language"></div>
+
     <!-- Intro -->
     <div id="intro">
       <div class="intro-box">
-        <div class="intro-sub">IL DUNGEON DEL TRADER</div>
+        <div class="intro-sub" id="intro-sub"></div>
         <h1 id="intro-title">VKEQ</h1>
         <div class="candles"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-        <button id="start" class="blink">▶ PREMI INVIO PER ENTRARE</button>
-        <div class="intro-hint">WASD / frecce / click per muoverti &middot; E per interagire</div>
+        <button id="start"><span class="blink" id="start-text"></span></button>
+        <div class="intro-hint" id="intro-hint"></div>
       </div>
     </div>
 
@@ -52,16 +55,18 @@
       <div class="panel-box">
         <div class="panel-head">
           <h2 id="panel-title"></h2>
-          <button id="panel-close" aria-label="Chiudi">✕</button>
+          <button id="panel-close" aria-label="Close">&#10005;</button>
         </div>
         <div id="panel-body"></div>
       </div>
     </div>
 
+    <div id="draft-badge" hidden>DRAFT PREVIEW</div>
+
     <noscript>
       <div style="padding: 24px; color: #eee; font-family: monospace">
         <h1>vkeq — Day Trader</h1>
-        <p>Questo sito è un mini-game 3D e richiede JavaScript.</p>
+        <p>This site is a 3D mini-game and needs JavaScript.</p>
       </div>
     </noscript>
 

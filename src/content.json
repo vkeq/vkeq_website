@@ -1,0 +1,62 @@
+{
+  "name": "vkeq",
+  "tagline": { "en": "Day Trader · Futures & Indices", "it": "Day Trader · Futures & Indici" },
+  "currency": "USD",
+  "contactEmail": "contact@vkeq.com",
+  "bio": {
+    "avatarInitial": "V",
+    "paragraphs": {
+      "en": [
+        "Hi, I'm vkeq. I day trade full time: in and out of the market within the same session, never holding overnight.",
+        "I started like most people, blowing accounts and hunting for the perfect setup. Then I realised the real edge is discipline: a few rules, followed every single day.",
+        "Here I share my journey, my real numbers and what I've learned. Welcome to my dungeon: explore the rooms to discover everything."
+      ],
+      "it": [
+        "Ciao, sono vkeq. Faccio day trading a tempo pieno: entro ed esco dal mercato nella stessa giornata, senza posizioni overnight.",
+        "Ho iniziato come tanti, bruciando conti e cercando il setup perfetto. Poi ho capito che il vantaggio vero sta nella disciplina: poche regole, rispettate sempre.",
+        "Qui condivido il mio percorso, i numeri reali e cosa ho imparato. Benvenuto nel mio dungeon: esplora le stanze per scoprire tutto."
+      ]
+    },
+    "facts": [
+      { "label": { "en": "Markets", "it": "Mercati" }, "value": { "en": "NQ · ES · DAX", "it": "NQ · ES · DAX" } },
+      { "label": { "en": "Style", "it": "Stile" }, "value": { "en": "Intraday / Scalping", "it": "Intraday / Scalping" } },
+      { "label": { "en": "Session", "it": "Sessione" }, "value": { "en": "New York open", "it": "Apertura New York" } },
+      { "label": { "en": "Experience", "it": "Esperienza" }, "value": { "en": "5+ years", "it": "5+ anni" } },
+      { "label": { "en": "Platform", "it": "Piattaforma" }, "value": { "en": "TradingView", "it": "TradingView" } },
+      { "label": { "en": "Rule #1", "it": "Regola n.1" }, "value": { "en": "Never risk more than 1% per trade", "it": "Mai rischiare più dell'1% per trade" } }
+    ]
+  },
+  "performance": {
+    "period": { "en": "Jan 2025 – Oct 2025", "it": "Gen 2025 – Ott 2025" },
+    "stats": [
+      { "label": { "en": "Net P&L", "it": "P&L netto" }, "value": "+$48,250", "tone": "good" },
+      { "label": { "en": "Win rate", "it": "Win rate" }, "value": "58%", "tone": "" },
+      { "label": { "en": "Profit factor", "it": "Profit factor" }, "value": "1.92", "tone": "" },
+      { "label": { "en": "Max drawdown", "it": "Max drawdown" }, "value": "-6.4%", "tone": "bad" },
+      { "label": { "en": "Total trades", "it": "Trade totali" }, "value": "412", "tone": "" },
+      { "label": { "en": "Payouts", "it": "Payout" }, "value": "auto:payouts", "tone": "good" }
+    ],
+    "equity": [
+      0, 420, 310, 890, 1250, 1100, 1740, 2300, 2050, 2900, 3600, 3350, 4100, 4950, 4700, 5600, 6400, 6100, 7300, 8200,
+      7900, 9100, 10400, 9800, 11200, 12600, 12100, 13900, 15200, 14600, 16800, 18300, 17500, 19900, 21800, 21000, 23600,
+      25400, 24200, 27000, 29300, 28100, 31200, 33800, 32500, 35900, 38400, 37100, 40600, 43200, 41800, 45100, 46900, 48250
+    ],
+    "payouts": [
+      { "firm": "Prop Firm #1", "amount": 3200, "date": "2025-03" },
+      { "firm": "Prop Firm #2", "amount": 5750, "date": "2025-05" },
+      { "firm": "Prop Firm #1", "amount": 4100, "date": "2025-07" },
+      { "firm": "Prop Firm #3", "amount": 7900, "date": "2025-09" }
+    ],
+    "disclaimer": {
+      "en": "Past results do not guarantee future results. Nothing published here is financial advice. Trading involves a high risk of losing capital.",
+      "it": "I risultati passati non garantiscono risultati futuri. Niente di quanto pubblicato è consulenza finanziaria. Il trading comporta un rischio elevato di perdita del capitale."
+    }
+  },
+  "socials": [
+    { "id": "youtube", "label": "YouTube", "handle": "@vkeq", "url": "https://youtube.com/@vkeq", "color": "#ff4040", "desc": { "en": "Session recaps and live trading.", "it": "Recap delle sessioni e live trading." } },
+    { "id": "instagram", "label": "Instagram", "handle": "@vkeq", "url": "https://instagram.com/vkeq", "color": "#e1306c", "desc": { "en": "Behind the scenes and daily results.", "it": "Dietro le quinte e risultati giornalieri." } },
+    { "id": "x", "label": "X / Twitter", "handle": "@vkeq", "url": "https://x.com/vkeq", "color": "#e8e8f0", "desc": { "en": "Trade ideas and market thoughts.", "it": "Idee di trading e pensieri sul mercato." } },
+    { "id": "discord", "label": "Discord", "handle": "vkeq community", "url": "https://discord.gg/", "color": "#5865f2", "desc": { "en": "The community: we trade together.", "it": "La community: si fa trading insieme." } },
+    { "id": "tradingview", "label": "TradingView", "handle": "vkeq", "url": "https://tradingview.com/u/vkeq/", "color": "#2ec4ff", "desc": { "en": "My charts and published ideas.", "it": "I miei grafici e le idee pubblicate." } }
+  ]
+}

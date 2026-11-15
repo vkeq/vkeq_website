@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { box, mat, label, glow, voxelText } from './voxel.js';
 import { CONFIG } from './config.js';
+import { t as T } from './i18n.js';
 
 // Each builder adds meshes to the scene, marks solid cells on the grid and
 // returns interactables: { id, x, z, radius, prompt, hit, action, update }.
@@ -22,13 +23,13 @@ export function buildProps(scene, grid, world, actions) {
     box(g, 0.36, 0.26, 0.02, '#d9c48a', 0.5, 1.38, 0.08);
     box(g, 0.05, 0.05, 0.03, '#d0302a', -0.38, 1.44, 0.1);
     box(g, 0.05, 0.05, 0.03, '#d0302a', 0.2, 1.33, 0.1);
-    const t = label('BENVENUTO', { color: '#ffe9a8' });
+    const t = label({ key: 'labels.welcome' }, { color: '#ffe9a8' });
     t.position.set(0, 1.85, 0.1);
     g.add(t);
     scene.add(g);
     world.reserve(16, 14);
     world.reserve(17, 14);
-    items.push({ id: 'welcome', x: 16.5, z: 15.2, radius: 1.6, prompt: 'Leggi la bacheca', hit: g, action: actions.welcome });
+    items.push({ id: 'welcome', x: 16.5, z: 15.2, radius: 1.6, prompt: () => T('prompts.welcome'), hit: g, action: actions.welcome });
   }
   {
     // Banner with emblem (east of corridor)
@@ -67,9 +68,9 @@ export function buildProps(scene, grid, world, actions) {
   }
   // Direction signs
   [
-    ['↑ TESORO', 20, 2.05, 12.6, '#f5c542'],
-    ['← BIBLIOTECA', 13, 1.2, 19.5, '#e0a96d'],
-    ['PORTALI →', 27, 1.2, 19.5, '#b48cff'],
+    [{ key: 'labels.toTreasury' }, 20, 2.05, 12.6, '#f5c542'],
+    [{ key: 'labels.toLibrary' }, 13, 1.2, 19.5, '#e0a96d'],
+    [{ key: 'labels.toPortals' }, 27, 1.2, 19.5, '#b48cff'],
   ].forEach(([text, x, y, z, color]) => {
     const s = label(text, { color });
     s.position.set(x, y, z);
@@ -117,7 +118,7 @@ export function buildProps(scene, grid, world, actions) {
     const rune = glow('#ffd27a', 1.1, 0.55);
     rune.position.set(0, 1.25, 0);
     g.add(rune);
-    const l = label('CHI SONO', { color: '#ffd27a' });
+    const l = label({ key: 'labels.about' }, { color: '#ffd27a' });
     l.position.set(0, 1.7, 0);
     g.add(l);
     scene.add(g);
@@ -129,7 +130,7 @@ export function buildProps(scene, grid, world, actions) {
       rune.material.opacity = 0.45 + Math.sin(t * 2.2) * 0.12;
       l.position.y = 1.7 + Math.sin(t * 2) * 0.04;
     });
-    items.push({ id: 'bio', x: 6.5, z: 18.5, radius: 1.9, prompt: 'Leggi il libro', hit: g, action: actions.bio });
+    items.push({ id: 'bio', x: 6.5, z: 18.5, radius: 1.9, prompt: () => T('prompts.bio'), hit: g, action: actions.bio });
 
     // Trading desk with monitors (decor)
     const d = new THREE.Group();
@@ -239,7 +240,7 @@ export function buildProps(scene, grid, world, actions) {
         drawChart(n % 2 === 0);
       }
     });
-    items.push({ id: 'equity', x: 20, z: 2.4, radius: 2.3, prompt: 'Guarda la equity curve', hit: screen, action: actions.equity });
+    items.push({ id: 'equity', x: 20, z: 2.4, radius: 2.3, prompt: () => T('prompts.equity'), hit: screen, action: actions.equity });
   }
   {
     // Treasure chest (performance stats)
@@ -261,7 +262,7 @@ export function buildProps(scene, grid, world, actions) {
     const halo = glow('#ffd24a', 2.2, 0);
     halo.position.y = 0.9;
     g.add(halo);
-    const l = label('PERFORMANCE', { color: '#ffd84a' });
+    const l = label({ key: 'labels.performance' }, { color: '#ffd84a' });
     l.position.set(0, 1.55, 0);
     g.add(l);
     scene.add(g);
@@ -316,7 +317,7 @@ export function buildProps(scene, grid, world, actions) {
       x: 20,
       z: 6.5,
       radius: 1.9,
-      prompt: 'Apri il forziere',
+      prompt: () => T('prompts.chest'),
       hit: g,
       action: () => {
         if (target === 0) burst();
@@ -377,7 +378,7 @@ export function buildProps(scene, grid, world, actions) {
     const portal = new THREE.Mesh(new THREE.PlaneGeometry(2.15, 2.25), portalMat);
     portal.position.set(0, 1.25, 0.05);
     g.add(portal);
-    const l = label('SOCIAL', { color: '#d9c4ff' });
+    const l = label({ key: 'labels.social' }, { color: '#d9c4ff' });
     l.position.set(0, 3.15, 0.2);
     g.add(l);
     scene.add(g);
@@ -407,7 +408,7 @@ export function buildProps(scene, grid, world, actions) {
       }
       pgeo.attributes.position.needsUpdate = true;
     });
-    items.push({ id: 'portal', x: 33.5, z: 16, radius: 1.9, prompt: 'Entra nel portale', hit: g, action: actions.allSocials });
+    items.push({ id: 'portal', x: 33.5, z: 16, radius: 1.9, prompt: () => T('prompts.portal'), hit: g, action: actions.allSocials });
   }
   {
     // One crystal pedestal per social link

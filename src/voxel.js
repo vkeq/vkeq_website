@@ -26,9 +26,10 @@ export function box(parent, w, h, d, color, x = 0, y = 0, z = 0, opts) {
 
 // Floating label rendered as crisp HTML text, anchored to this Object3D.
 export const labels = [];
+// `text` is a literal string or { key } for a translated UI string.
 export function label(text, { color = '#ffe9a8', size = 'sm' } = {}) {
   const o = new THREE.Object3D();
-  o.userData.label = { text, color, size };
+  o.userData.label = { text: typeof text === 'string' ? text : null, key: text?.key ?? null, color, size };
   labels.push(o);
   return o;
 }
