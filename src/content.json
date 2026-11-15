@@ -204,11 +204,7 @@
       "label": "Spotify",
       "handle": "vkeq",
       "url": "https://open.spotify.com/",
-      "color": "#1db954",
-      "desc": {
-        "en": "The playlists I trade to.",
-        "it": "Le playlist con cui faccio trading."
-      }
+      "color": "#1db954"
     },
     {
       "id": "instagram",
@@ -216,11 +212,7 @@
       "label": "Instagram",
       "handle": "@vkeq",
       "url": "https://instagram.com/vkeq",
-      "color": "#e1306c",
-      "desc": {
-        "en": "Behind the scenes and daily results.",
-        "it": "Dietro le quinte e risultati giornalieri."
-      }
+      "color": "#e1306c"
     },
     {
       "id": "discord",
@@ -228,11 +220,7 @@
       "label": "Discord",
       "handle": "vkeq community",
       "url": "https://discord.gg/",
-      "color": "#5865f2",
-      "desc": {
-        "en": "The community: we trade together.",
-        "it": "La community: si fa trading insieme."
-      }
+      "color": "#5865f2"
     }
   ]
 }

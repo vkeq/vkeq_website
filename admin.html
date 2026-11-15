@@ -21,6 +21,7 @@
           <button data-act="download">Scarica JSON</button>
           <button data-act="import">Importa JSON</button>
           <button data-act="reset">Annulla modifiche</button>
+          <button data-act="password">Imposta password</button>
           <button data-act="github">Impostazioni GitHub</button>
           <button data-act="logout">Esci</button>
           <a href="./" target="_blank" rel="noopener">Apri il sito</a>
@@ -45,10 +46,27 @@
           >Token GitHub (fine-grained, permesso "Contents: read and write" solo su questo repo)
           <input name="token" type="password" autocomplete="off" placeholder="github_pat_..." />
         </label>
-        <p class="muted">Il token resta salvato solo in questo browser. Senza token nessuno può modificare il sito.</p>
+        <p class="muted">Il token resta solo in questa scheda del browser. Senza token (o password) nessuno può modificare il sito.</p>
         <div class="a-row">
           <button value="cancel" class="a-btn">Annulla</button>
           <button value="ok" class="a-btn gold">Salva impostazioni</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="a-pw">
+      <form method="dialog" class="a-dialog">
+        <h2>Password admin</h2>
+        <p>
+          La password sblocca il token GitHub da qualsiasi dispositivo, dal lucchetto in basso a destra del sito.
+          Il token viene salvato nel repository <b>solo cifrato</b> con questa password: sceglila lunga (una frase) e non riusarla altrove.
+        </p>
+        <label>Nuova password <input name="p1" type="password" autocomplete="new-password" /></label>
+        <label>Ripeti password <input name="p2" type="password" autocomplete="new-password" /></label>
+        <p class="a-err"></p>
+        <div class="a-row">
+          <button value="cancel" class="a-btn">Annulla</button>
+          <button value="ok" class="a-btn gold">Salva password</button>
         </div>
       </form>
     </dialog>

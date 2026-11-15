@@ -300,6 +300,10 @@ async function boot() {
     sfx.ui();
     UI.showMenu(goTo);
   });
+  $('#btn-admin').addEventListener('click', () => {
+    sfx.ui();
+    UI.showAdminLogin();
+  });
   const btnMusic = $('#btn-music');
   const btnSfx = $('#btn-sfx');
   btnMusic.classList.toggle('off', !audioPrefs().music);

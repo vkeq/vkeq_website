@@ -231,7 +231,7 @@ kbd {
 #btn-action {
   position: absolute;
   right: 28px;
-  bottom: 36px;
+  bottom: 56px;
   width: 72px;
   height: 72px;
   border: 0;
@@ -787,4 +787,59 @@ canvas.equity.big {
 
 #prompt kbd[hidden] {
   display: none;
+}
+
+/* Small admin lock, bottom right */
+#btn-admin {
+  position: absolute;
+  right: max(12px, env(safe-area-inset-right, 0px));
+  bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  width: 24px;
+  height: 24px;
+  border: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: var(--panel);
+  box-shadow: 0 0 0 2px var(--edge), 0 0 0 4px #000;
+  opacity: 0.55;
+  pointer-events: auto;
+}
+#btn-admin:hover,
+#btn-admin:focus-visible {
+  opacity: 1;
+  outline: none;
+}
+.lock {
+  display: block;
+  width: 10px;
+  height: 12px;
+  image-rendering: pixelated;
+  background: no-repeat center / contain;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 5 6' shape-rendering='crispEdges'%3E%3Cpath fill='%23f5c542' d='M1 0h3v1h-3z M0 1h1v2h-1z M4 1h1v2h-1z M0 3h5v3h-5z'/%3E%3Cpath fill='%230b0814' d='M2 4h1v1h-1z'/%3E%3C/svg%3E");
+}
+.admin-login label {
+  display: block;
+  color: var(--muted);
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+.admin-login input {
+  width: 100%;
+  font: 17px var(--body);
+  color: var(--ink);
+  background: #07050d;
+  border: 2px solid var(--edge);
+  padding: 8px 10px;
+  user-select: text;
+}
+.admin-login input:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+.admin-msg {
+  min-height: 20px;
+  margin: 8px 0 0 !important;
+  color: var(--gold);
+  font-size: 15px;
 }

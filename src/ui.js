@@ -4,6 +4,7 @@ import { sfx } from './audio.js';
 import { t, tr, getLang, setLang, onLangChange } from './i18n.js';
 import { FACTS, randomFact } from './facts.js';
 import { logoDataURL } from './logos.js';
+import { loadKey, decryptToken, setSessionToken } from './adminkey.js';
 
 const logoHTML = (s, cls) => {
   const url = logoDataURL(s.icon || s.id);
@@ -154,7 +155,6 @@ export const showSocial = panel((s) => {
     `<div class="social-one" style="--c:${esc(s.color)}">
        ${logoHTML(s, 'logo-big')}
        <div class="big">${esc(s.handle)}</div>
-       <p>${esc(tr(s.desc))}</p>
        <a class="btn" href="${esc(s.url)}" target="_blank" rel="noopener">${t('open')} ${esc(s.label)} ↗</a>
      </div>`,
     { accent: s.color },
@@ -196,6 +196,45 @@ export const showMenu = panel((go) => {
               go(b.dataset.go);
             }),
           ),
+    },
+  );
+});
+
+// Admin login: the password decrypts the publishing token, then the admin page opens.
+export const showAdminLogin = panel(() => {
+  const adminUrl = import.meta.env.BASE_URL + 'admin.html';
+  openPanel(
+    t('adminTitle'),
+    `<form class="admin-login" id="admin-login">
+       <p>${t('adminBody')}</p>
+       <label for="admin-pass">${t('adminPassword')}</label>
+       <input id="admin-pass" type="password" autocomplete="current-password" required />
+       <p class="admin-msg" id="admin-msg" role="status"></p>
+       <button class="btn-row" type="submit">${t('adminEnter')} &raquo;</button>
+     </form>`,
+    {
+      accent: '#f5c542',
+      after: () => {
+        const input = $('#admin-pass');
+        setTimeout(() => input.focus(), 50);
+        $('#admin-login').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const msg = $('#admin-msg');
+          msg.textContent = t('adminChecking');
+          const key = await loadKey();
+          if (!key) {
+            msg.innerHTML = `${t('adminNotSetup')} <a href="${adminUrl}">${t('adminOpen')}</a>`;
+            return;
+          }
+          try {
+            setSessionToken(await decryptToken(key, input.value));
+            location.href = adminUrl;
+          } catch {
+            msg.textContent = t('adminWrong');
+            input.select();
+          }
+        });
+      },
     },
   );
 });

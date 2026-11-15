@@ -11,6 +11,11 @@ Vite + Three.js, no framework. Low-res render (canvas at 1/2-1/4 size, `image-re
 - `src/content.json` – ALL user content (bio, stats, equity array, payouts, socials). Text fields are `{ "en": ..., "it": ... }`.
   Edited by the owner through `/admin.html` (`src/admin.js`): Preview stores a draft in localStorage and opens `/?draft=1`;
   Save (dev only) POSTs to the `/__admin/save` middleware in `vite.config.js`; Publish commits the file through the GitHub contents API.
+- Admin login on the static site: `src/adminkey.js`. The GitHub token is committed only encrypted with the admin password
+  (`public/admin-key.json`, PBKDF2 600k + AES-GCM). The lock button (bottom right, `showAdminLogin` in ui.js) decrypts it,
+  puts it in sessionStorage and opens admin.html. Never commit a key file made with a test password.
+- Hosting: GitHub Pages via `.github/workflows/deploy.yml` on every push to `main`; domain `vkeq.trade` from `public/CNAME`
+  (base path `/`; without CNAME the build uses `/<repo>/`). Pushes to `main` are authorised by the owner.
 - `src/config.js` – loads content (or the draft), money/month formatting, `auto:payouts` / `auto:payoutsTotal` stat values.
 - `src/i18n.js` – UI strings (`t('key')`), content picker `tr(field)`, `setLang`/`onLangChange`. English default, Italian alternative.
   Every visible string must exist in BOTH `en` and `it`; panels re-render on language change via `panel()` in ui.js.

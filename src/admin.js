@@ -4,6 +4,7 @@ import './admin.css';
 import original from './content.json';
 import { drawEquity, flagCanvas } from './ui.js';
 import { LOGO_IDS } from './logos.js';
+import { encryptToken, decryptToken, loadKey, KEY_PATH, getSessionToken, setSessionToken } from './adminkey.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -77,7 +78,7 @@ const TEMPLATES = {
   'bio.facts': () => ({ label: { en: '', it: '' }, value: { en: '', it: '' } }),
   'performance.stats': () => ({ label: { en: '', it: '' }, value: '', tone: '' }),
   'performance.payouts': () => ({ firm: '', amount: 0, date: new Date().toISOString().slice(0, 7) }),
-  socials: () => ({ id: 'link' + Date.now().toString(36), icon: 'instagram', label: '', handle: '', url: 'https://', color: '#ffffff', desc: { en: '', it: '' } }),
+  socials: () => ({ id: 'link' + Date.now().toString(36), icon: 'instagram', label: '', handle: '', url: 'https://', color: '#ffffff' }),
 };
 
 // ---------- render ----------
@@ -143,7 +144,6 @@ function render() {
               <option value="" ${!s.icon ? 'selected' : ''}>cristallo semplice</option>
             </select></label>
         </div>
-        ${bi('Descrizione', `socials.${i}.desc`)}
         ${listTools('socials', i, state.socials.length)}
       </div>`,
     )
@@ -293,8 +293,18 @@ $('#a-save').addEventListener('click', async () => {
   } else flash('Errore nel salvataggio: ' + esc(await r.text()));
 });
 
-// Publish to GitHub (commit content.json)
-const ghSettings = () => ({ repo: 'vkeq/vkeq_website', branch: 'main', path: 'src/content.json', token: '', ...(load(GH_KEY) || {}) });
+// ---------- GitHub publishing ----------
+// Repo settings live in localStorage; the token only in sessionStorage (this tab), unlocked
+// either with the admin password (encrypted key in the repo) or by pasting the token.
+const ghSettings = () => {
+  const saved = load(GH_KEY) || {};
+  delete saved.token; // older versions kept the token here
+  return { repo: 'vkeq/vkeq_website', branch: 'main', path: 'src/content.json', ...saved, token: getSessionToken() };
+};
+const saveGh = ({ token, ...rest }) => {
+  store(GH_KEY, rest);
+  if (token !== undefined) setSessionToken(token);
+};
 function openGh() {
   const d = $('#a-gh');
   const s = ghSettings();
@@ -307,7 +317,7 @@ function openGh() {
         if (d.returnValue === 'ok') {
           const v = {};
           for (const k of ['repo', 'branch', 'path', 'token']) v[k] = d.querySelector(`[name=${k}]`).value.trim();
-          store(GH_KEY, v);
+          saveGh(v);
           res(true);
         } else res(false);
       },
@@ -321,31 +331,64 @@ const b64 = (str) => {
   bytes.forEach((b) => (bin += String.fromCharCode(b)));
   return btoa(bin);
 };
+// Create or update one file in the repository with a commit.
+async function putFile(path, text, message) {
+  const s = ghSettings();
+  const api = `https://api.github.com/repos/${s.repo}/contents/${path}`;
+  const headers = { Authorization: `Bearer ${s.token}`, Accept: 'application/vnd.github+json' };
+  const cur = await fetch(`${api}?ref=${encodeURIComponent(s.branch)}`, { headers });
+  if (!cur.ok && cur.status !== 404) throw new Error(`lettura file: ${cur.status}`);
+  const sha = cur.ok ? (await cur.json()).sha : undefined;
+  const put = await fetch(api, { method: 'PUT', headers, body: JSON.stringify({ message, content: b64(text), branch: s.branch, sha }) });
+  if (!put.ok) throw new Error(`${put.status} ${(await put.json().catch(() => ({}))).message || ''}`);
+}
+
 $('#a-publish').addEventListener('click', async () => {
   if (!validate()) return;
-  let s = ghSettings();
-  if (!s.token && !(await openGh())) return;
-  s = ghSettings();
+  if (!ghSettings().token && !(await openGh())) return;
+  const s = ghSettings();
   if (!s.token) return;
   if (!confirm(`Pubblicare le modifiche su ${s.repo} (${s.branch})?`)) return;
   updateStatus('Pubblicazione in corso…');
-  const api = `https://api.github.com/repos/${s.repo}/contents/${s.path}`;
-  const headers = { Authorization: `Bearer ${s.token}`, Accept: 'application/vnd.github+json' };
   try {
-    const cur = await fetch(`${api}?ref=${encodeURIComponent(s.branch)}`, { headers });
-    if (!cur.ok && cur.status !== 404) throw new Error(`lettura file: ${cur.status}`);
-    const sha = cur.ok ? (await cur.json()).sha : undefined;
-    const put = await fetch(api, {
-      method: 'PUT',
-      headers,
-      body: JSON.stringify({ message: 'Update site content from admin', content: b64(JSON.stringify(state, null, 2) + '\n'), branch: s.branch, sha }),
-    });
-    if (!put.ok) throw new Error(`${put.status} ${(await put.json().catch(() => ({}))).message || ''}`);
+    await putFile(s.path, JSON.stringify(state, null, 2) + '\n', 'Update site content from admin');
     Object.assign(original, structuredClone(state));
     changed();
-    flash('Pubblicato! Il sito online si aggiornerà al prossimo deploy (di solito 1-2 minuti).', 10000);
+    flash('Pubblicato! Il sito online si aggiornerà tra 1-2 minuti.', 10000);
   } catch (e) {
     flash('Pubblicazione non riuscita: ' + esc(e.message) + '. Controlla token e impostazioni GitHub.', 10000);
+  }
+});
+
+// Set / change the admin password: encrypts the current token and commits public/admin-key.json.
+function openPassword() {
+  if (!ghSettings().token) {
+    alert('Per impostare la password devi prima accedere con il token GitHub.');
+    return;
+  }
+  const d = $('#a-pw');
+  d.querySelector('[name=p1]').value = '';
+  d.querySelector('[name=p2]').value = '';
+  d.querySelector('.a-err').textContent = '';
+  d.showModal();
+}
+$('#a-pw form').addEventListener('submit', async (e) => {
+  const d = $('#a-pw');
+  if (e.submitter?.value !== 'ok') return;
+  e.preventDefault();
+  const p1 = d.querySelector('[name=p1]').value;
+  const p2 = d.querySelector('[name=p2]').value;
+  const err = d.querySelector('.a-err');
+  if (p1.length < 12) return (err.textContent = 'Usa almeno 12 caratteri (meglio una frase lunga).');
+  if (p1 !== p2) return (err.textContent = 'Le due password non coincidono.');
+  err.textContent = 'Salvataggio…';
+  try {
+    const blob = await encryptToken(ghSettings().token, p1);
+    await putFile(KEY_PATH, JSON.stringify(blob, null, 2) + '\n', 'Update admin password');
+    d.close();
+    flash('Password salvata. Tra 1-2 minuti funzionerà dal lucchetto in basso a destra del sito.', 10000);
+  } catch (ex) {
+    err.textContent = 'Errore: ' + ex.message;
   }
 });
 
@@ -369,9 +412,10 @@ $('#a-menu').addEventListener('click', async (e) => {
     changed();
     render();
   } else if (act === 'github') openGh();
+  else if (act === 'password') openPassword();
   else if (act === 'logout') {
-    store(GH_KEY, { ...ghSettings(), token: '' });
-    location.reload();
+    setSessionToken('');
+    location.href = './';
   }
 });
 $('#a-file').addEventListener('change', async (e) => {
@@ -394,38 +438,68 @@ window.addEventListener('beforeunload', (e) => {
 });
 
 // ---------- Login ----------
-// On the live site the admin "logs in" with a GitHub token that can write to the repo:
-// without it nothing can be changed. On the local dev server no login is needed.
-function showLogin(error = '') {
+// Live site: password (decrypts the publishing token) or, the first time, the GitHub token itself.
+// Local dev server: no login needed for saving to disk.
+async function checkToken(repo, token) {
+  const r = await fetch(`https://api.github.com/repos/${repo}`, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' } });
+  if (!r.ok) throw new Error(r.status === 404 ? 'Repository non trovato o token senza accesso.' : `Token non valido (${r.status}).`);
+  const info = await r.json();
+  if (!info.permissions?.push) throw new Error('Il token può leggere ma non scrivere: dai il permesso "Contents: Read and write".');
+  return info;
+}
+
+function enter() {
+  document.querySelector('.a-actions').hidden = false;
+  render();
+}
+
+function showLogin({ key = null, mode = key ? 'password' : 'token', error = '' } = {}) {
   document.querySelector('.a-actions').hidden = true;
   const s = ghSettings();
   $('#a-status').textContent = '';
+  const pw = mode === 'password';
   $('#a-main').innerHTML = `
     <form class="a-login" id="a-login">
       <h2>Accesso admin</h2>
-      <p>Accedi con il tuo token GitHub. Serve un token <b>fine-grained</b> con permesso
-         <b>Contents: Read and write</b> solo sul repository del sito.
-         <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Crea un token</a></p>
-      <label class="a-field"><span>Repository</span><input id="l-repo" value="${esc(s.repo)}" /></label>
-      <label class="a-field"><span>Token</span><input id="l-token" type="password" autocomplete="current-password" placeholder="github_pat_..." /></label>
+      ${
+        pw
+          ? `<label class="a-field"><span>Password</span><input id="l-pass" type="password" autocomplete="current-password" required /></label>`
+          : `<p>Prima volta: accedi con il token GitHub. Serve un token <b>fine-grained</b> con permesso
+               <b>Contents: Read and write</b> solo su questo repository.
+               <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Crea un token</a></p>
+             <label class="a-field"><span>Repository</span><input id="l-repo" value="${esc(s.repo)}" /></label>
+             <label class="a-field"><span>Token</span><input id="l-token" type="password" autocomplete="off" placeholder="github_pat_..." required /></label>
+             <p class="muted">Dopo l'accesso, dal menu <b>&#8942; → Imposta password</b> scegli la password che userai dal lucchetto del sito.</p>`
+      }
       ${error ? `<p class="a-err">${esc(error)}</p>` : ''}
       <button class="a-btn gold" type="submit">Accedi</button>
-      <p class="muted">Il token resta salvato solo in questo browser. Puoi uscire in qualsiasi momento dal menu.</p>
+      ${key ? `<p><a href="#" id="l-switch">${pw ? 'Accedi con il token GitHub' : 'Accedi con la password'}</a></p>` : ''}
     </form>`;
+  $('#l-switch')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    showLogin({ key, mode: pw ? 'token' : 'password' });
+  });
   $('#a-login').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const repo = $('#l-repo').value.trim();
-    const token = $('#l-token').value.trim();
     try {
-      const r = await fetch(`https://api.github.com/repos/${repo}`, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' } });
-      if (!r.ok) throw new Error(r.status === 404 ? 'Repository non trovato o token senza accesso.' : `Token non valido (${r.status}).`);
-      const info = await r.json();
-      if (!info.permissions?.push) throw new Error('Il token può leggere ma non scrivere: dai il permesso "Contents: Read and write".');
-      store(GH_KEY, { ...ghSettings(), repo, token, branch: info.default_branch || 'main' });
-      document.querySelector('.a-actions').hidden = false;
-      render();
+      if (pw) {
+        let token;
+        try {
+          token = await decryptToken(key, $('#l-pass').value);
+        } catch {
+          throw new Error('Password sbagliata.');
+        }
+        const info = await checkToken(s.repo, token);
+        saveGh({ ...ghSettings(), token, branch: info.default_branch || s.branch });
+      } else {
+        const repo = $('#l-repo').value.trim();
+        const token = $('#l-token').value.trim();
+        const info = await checkToken(repo, token);
+        saveGh({ ...ghSettings(), repo, token, branch: info.default_branch || 'main' });
+      }
+      enter();
     } catch (err) {
-      showLogin(err.message);
+      showLogin({ key, mode, error: err.message });
     }
   });
 }
@@ -436,7 +510,7 @@ async function boot() {
     dev = (await fetch('/__admin/save')).status === 204;
   } catch {}
   $('#a-save').hidden = !dev;
-  if (!dev && !ghSettings().token) return showLogin();
-  render();
+  if (dev || ghSettings().token) return enter();
+  showLogin({ key: await loadKey() });
 }
 boot();
