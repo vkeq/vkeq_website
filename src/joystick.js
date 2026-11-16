@@ -33,6 +33,8 @@ export function createJoystick(el, { onStart } = {}) {
   function release() {
     id = null;
     out.x = out.y = out.mag = 0;
+    // the knob springs back to the centre (fast, ease-out) instead of teleporting
+    knob.style.transition = 'transform 140ms cubic-bezier(0.23, 1, 0.32, 1)';
     knob.style.transform = '';
     el.classList.remove('active');
   }
@@ -48,6 +50,7 @@ export function createJoystick(el, { onStart } = {}) {
     cy = r.top + r.height / 2;
     radius = r.width * 0.36;
     el.classList.add('active');
+    knob.style.transition = 'none'; // while dragging the knob sits exactly under the finger
     onStart?.();
     place(e);
   });

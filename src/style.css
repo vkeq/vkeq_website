@@ -64,7 +64,6 @@ kbd {
 }
 
 /* Pixel border helper */
-.px-border,
 .panel-box,
 #prompt,
 .hud-buttons button,
@@ -90,8 +89,8 @@ kbd {
 }
 .hud-id {
   position: absolute;
-  top: 16px;
-  left: 16px;
+  top: max(16px, env(safe-area-inset-top, 0px));
+  left: max(16px, env(safe-area-inset-left, 0px));
   text-shadow: 2px 2px 0 #000;
 }
 #hud-name {
@@ -141,8 +140,8 @@ kbd {
 }
 .hud-right {
   position: absolute;
-  top: 64px;
-  right: 16px;
+  top: calc(max(16px, env(safe-area-inset-top, 0px)) + 48px);
+  right: max(16px, env(safe-area-inset-right, 0px));
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -178,11 +177,9 @@ kbd {
   width: 10px;
   height: 10px;
 }
-.hud-buttons button:hover,
 .hud-buttons button:focus-visible {
   background: var(--panel-2);
   color: var(--gold);
-  outline: none;
 }
 
 
@@ -217,7 +214,7 @@ kbd {
   padding: 8px 12px;
   font-size: 18px;
   white-space: nowrap;
-  pointer-events: none;
+  cursor: pointer; /* clicking / tapping the prompt interacts with the object */
   z-index: 5;
   animation: bob 1s steps(2) infinite;
 }
@@ -225,7 +222,7 @@ kbd {
   margin-left: 6px;
 }
 @keyframes bob {
-  50% { margin-top: -4px; }
+  50% { translate: 0 -4px; }
 }
 
 #btn-action {
@@ -272,7 +269,7 @@ kbd {
   font-family: var(--pixel);
   font-size: 64px;
   line-height: 64px;
-  margin: 22px 0 10px;
+  margin: 6px 0 22px;
   color: var(--gold);
   text-shadow: 4px 4px 0 #a8761c, 8px 8px 0 #000;
   letter-spacing: 6px;
@@ -283,7 +280,7 @@ kbd {
   align-items: flex-end;
   gap: 8px;
   height: 56px;
-  margin: 10px 0 24px;
+  margin: 20px 0 24px;
 }
 .candles i {
   width: 10px;
@@ -349,7 +346,7 @@ kbd {
   width: min(680px, 100%);
 }
 @keyframes pop {
-  from { transform: scale(0.85); opacity: 0; }
+  from { transform: scale(0.92); opacity: 0; }
 }
 .panel-head {
   display: flex;
@@ -375,10 +372,8 @@ kbd {
   line-height: 16px;
   padding: 4px 6px;
 }
-#panel-close:hover,
 #panel-close:focus-visible {
   color: var(--accent);
-  outline: none;
 }
 #panel-body {
   padding: 14px 18px 18px;
@@ -499,28 +494,43 @@ canvas.equity {
   display: block;
   margin-bottom: 4px;
 }
-canvas.equity.big {
-  aspect-ratio: 300 / 140;
-  margin-bottom: 12px;
-}
 .payouts {
   display: grid;
   gap: 6px;
 }
-.payouts div {
+/* one row: pixel coin, month, firm, amount. The firm name wraps; month and amount never do. */
+.payouts > div {
   display: grid;
-  grid-template-columns: 90px 1fr auto;
+  grid-template-columns: 24px 82px minmax(0, 1fr) auto;
+  align-items: center;
   gap: 10px;
   padding: 6px 10px;
   background: #0e0a18;
-  border-left: 4px solid var(--gold);
 }
-.payouts span:first-child {
+.p-date {
   color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
-.payouts b {
+.p-firm {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.p-amt {
   color: var(--green);
   font-weight: normal;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.payouts > .total {
+  background: #10202a;
+  box-shadow: inset 0 2px 0 var(--edge);
+}
+@media (max-width: 640px) {
+  .payouts > div {
+    grid-template-columns: 24px 70px minmax(0, 1fr) auto;
+    gap: 8px;
+  }
 }
 .disclaimer {
   margin-top: 16px !important;
@@ -554,9 +564,7 @@ canvas.equity.big {
   line-height: 16px;
   box-shadow: 0 0 0 4px #000, 4px 4px 0 4px rgba(0, 0, 0, 0.4);
 }
-.btn:hover {
-  filter: brightness(1.15);
-}
+
 .social-list {
   display: grid;
   gap: 8px;
@@ -572,10 +580,8 @@ canvas.equity.big {
   color: var(--ink) !important;
   text-decoration: none;
 }
-.social-list a:hover,
 .social-list a:focus-visible {
   border-color: var(--c);
-  outline: none;
 }
 .social-list i {
   width: 14px;
@@ -620,11 +626,9 @@ canvas.equity.big {
   align-items: center;
   gap: 10px;
 }
-.menu button:hover,
 .menu button:focus-visible {
   border-color: var(--gold);
   color: var(--gold);
-  outline: none;
 }
 
 @media (max-width: 640px) {
@@ -636,11 +640,17 @@ canvas.equity.big {
   #room-toast { font-size: 8px; line-height: 8px; }
   #intro-title { font-size: 48px; line-height: 48px; }
   #start { font-size: 8px; line-height: 16px; }
-  .payouts div { grid-template-columns: 78px minmax(0, 1fr) auto; gap: 8px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+  /* the room name still fades in and out, it just does not slide */
+  #room-toast.show { animation: toast-fade 2.6s steps(12) forwards !important; }
+}
+@keyframes toast-fade {
+  0% { opacity: 0; }
+  15%, 80% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 /* World labels (anchored to 3D objects) */
@@ -669,8 +679,8 @@ canvas.equity.big {
 /* Language switch */
 #lang {
   position: fixed;
-  top: 16px;
-  right: 16px;
+  top: max(16px, env(safe-area-inset-top, 0px));
+  right: max(16px, env(safe-area-inset-right, 0px));
   z-index: 40;
   display: flex;
   gap: 10px;
@@ -694,26 +704,14 @@ canvas.equity.big {
   opacity: 1;
   box-shadow: 0 0 0 3px var(--gold), 0 0 0 6px #000;
 }
-#lang button:hover,
 #lang button:focus-visible {
   opacity: 1;
-  outline: none;
 }
 .flag {
   width: 24px;
   height: 16px;
   image-rendering: pixelated;
   display: block;
-}
-.payouts .total {
-  border-left-color: var(--green);
-  background: #10202a;
-}
-.payouts .total span:nth-child(2) {
-  color: var(--ink);
-}
-.menu .ico {
-  font-size: 20px;
 }
 #draft-badge {
   position: fixed;
@@ -740,8 +738,6 @@ canvas.equity.big {
   align-items: flex-start;
 }
 .fact-ico {
-  font-size: 30px;
-  line-height: 1;
   flex: none;
   padding: 8px;
   background: #0e0a18;
@@ -762,10 +758,8 @@ canvas.equity.big {
   border: 2px solid var(--edge);
   padding: 8px 14px;
 }
-.btn-row:hover,
 .btn-row:focus-visible {
   border-color: var(--accent);
-  outline: none;
 }
 
 .logo-big,
@@ -805,10 +799,8 @@ canvas.equity.big {
   opacity: 0.55;
   pointer-events: auto;
 }
-#btn-admin:hover,
 #btn-admin:focus-visible {
   opacity: 1;
-  outline: none;
 }
 .lock {
   display: block;
@@ -905,11 +897,6 @@ body.photo #intro {
   background: rgba(23, 17, 38, 0.75);
 }
 
-/* --- the floating prompt can be clicked / tapped --- */
-#prompt {
-  pointer-events: auto;
-  cursor: pointer;
-}
 
 /* --- touch input (phones, tablets, touch laptops in use) --- */
 html[data-input='touch'] #stick {
@@ -961,19 +948,6 @@ html[data-input='touch'] #game {
   cursor: default;
 }
 
-/* safe areas (notches, rounded corners) everywhere */
-.hud-id {
-  top: max(16px, env(safe-area-inset-top, 0px));
-  left: max(16px, env(safe-area-inset-left, 0px));
-}
-#lang {
-  top: max(16px, env(safe-area-inset-top, 0px));
-  right: max(16px, env(safe-area-inset-right, 0px));
-}
-.hud-right {
-  top: calc(max(16px, env(safe-area-inset-top, 0px)) + 48px);
-  right: max(16px, env(safe-area-inset-right, 0px));
-}
 
 /* --- phone --- */
 html[data-device='phone'] {
@@ -1119,11 +1093,11 @@ html[data-device='phone'][data-orient='landscape'] .intro-box {
 html[data-device='phone'][data-orient='landscape'] #intro-title {
   font-size: 32px;
   line-height: 32px;
-  margin: 14px 0 6px;
+  margin: 4px 0 14px;
 }
 html[data-device='phone'][data-orient='landscape'] .candles {
   height: 40px;
-  margin: 6px 0 10px;
+  margin: 12px 0 10px;
 }
 
 /* --- tablet: roomy, bigger targets, centred panels --- */
@@ -1161,12 +1135,6 @@ html[data-device='tablet'][data-orient='portrait'] #room-toast {
   bottom: calc(max(20px, env(safe-area-inset-bottom, 0px)) + var(--stick) + 32px);
 }
 
-/* --- desktop: pointer hints only where a mouse can hover --- */
-@media (hover: hover) {
-  #prompt:hover {
-    background: var(--panel-2);
-  }
-}
 
 /* photo mode for README captures: no touch controls either */
 body.photo #stick,
@@ -1185,27 +1153,205 @@ body.photo #btn-action {
 html[data-device='phone'][data-orient='portrait'] .panel-box {
   justify-self: stretch;
 }
-.payouts div {
-  grid-template-columns: 90px minmax(0, 1fr) auto;
-  align-items: baseline;
-}
-.payouts span:nth-child(2) {
-  overflow-wrap: anywhere;
-  min-width: 0;
-}
-html[data-device='phone'] .payouts div,
-html[data-device='phone'] .payouts span:nth-child(2) {
-  white-space: normal;
-}
-html[data-device='phone'] .payouts div {
-  grid-template-columns: 78px minmax(0, 1fr) auto;
-  gap: 8px;
-}
-.payouts span:first-child,
-.payouts b {
-  white-space: nowrap;
-}
 /* on phones the open panel sits above the language flags (they would cover its close button) */
 html[data-device='phone'] #panel {
   z-index: 45;
+}
+
+/* Hover only where a precise pointer can hover: on touch screens a tap would leave these "stuck" */
+@media (hover: hover) and (pointer: fine) {
+  .hud-buttons button:hover {
+    background: var(--panel-2);
+    color: var(--gold);
+  }
+  #panel-close:hover {
+    color: var(--accent);
+  }
+  .btn:hover {
+    filter: brightness(1.15);
+  }
+  .social-list a:hover {
+    border-color: var(--c);
+  }
+  .menu button:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+  #lang button:hover {
+    opacity: 1;
+  }
+  .btn-row:hover {
+    border-color: var(--accent);
+  }
+  #btn-admin:hover {
+    opacity: 1;
+  }
+  #prompt:hover {
+    background: var(--panel-2);
+  }
+}
+
+/* =====================================================================
+   Polish: browser surfaces, press feedback and phone behaviour
+   ===================================================================== */
+
+/* one focus ring for every control, drawn like the pixel borders */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+#game:focus-visible,
+.panel-box:focus-visible {
+  outline: none;
+}
+::selection {
+  background: var(--gold);
+  color: var(--bg);
+}
+input {
+  caret-color: var(--gold);
+}
+#panel-body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--edge) #0e0a18;
+  overscroll-behavior: contain; /* scrolling a panel never drags the page behind it */
+}
+#panel-body::-webkit-scrollbar {
+  width: 8px;
+}
+#panel-body::-webkit-scrollbar-track {
+  background: #0e0a18;
+}
+#panel-body::-webkit-scrollbar-thumb {
+  background: var(--edge);
+  border: 2px solid #0e0a18;
+}
+
+/* phones: no font inflation in landscape, no pull-to-refresh or rubber band over the game */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overscroll-behavior: none;
+}
+body {
+  overscroll-behavior: none;
+}
+/* controls fire on the first tap (no double-tap-zoom wait) and a long press never selects their label */
+button,
+a,
+[role='button'] {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* press feedback on pointer-down, for mouse and touch alike: the button sinks one pixel step.
+   Uses the individual `translate` property so it never fights the transforms set from JS. */
+.hud-buttons button:active,
+#lang button:active,
+#btn-action:active,
+#btn-admin:active,
+#panel-close:active,
+.menu button:active,
+.btn-row:active,
+.btn:active,
+.social-list a:active,
+#prompt:active,
+#start:active {
+  translate: 0 2px;
+  filter: brightness(0.88);
+}
+
+/* numbers line up in columns */
+.stat b {
+  font-variant-numeric: tabular-nums;
+}
+
+/* pixel icons (src/icons.js) */
+.px-ico {
+  display: block;
+  width: 24px;
+  height: 24px;
+  image-rendering: pixelated;
+  flex: none;
+}
+.fact-ico .px-ico {
+  width: 36px;
+  height: 36px;
+}
+
+/* =====================================================================
+   Worst-case content (long names, links, handles): wrap or truncate, never overflow
+   ===================================================================== */
+/* the identity block stops before the minimap / language flags on the right */
+.hud-id {
+  max-width: calc(100vw - 230px);
+}
+html[data-device='phone'] .hud-id {
+  max-width: calc(100vw - 172px);
+}
+html[data-device='tablet'] .hud-id {
+  max-width: calc(100vw - 260px);
+}
+#hud-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-bottom: 2px; /* keeps the text shadow inside the clipped box */
+}
+#hud-tag,
+.hud-room span {
+  overflow-wrap: anywhere;
+}
+.bio-head > div {
+  min-width: 0;
+}
+.big,
+.facts b,
+.social-list b,
+.social-list small,
+#panel-body p a {
+  overflow-wrap: anywhere;
+}
+.facts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+html[data-device='phone'] .facts {
+  grid-template-columns: minmax(0, 1fr);
+}
+.social-list span {
+  min-width: 0;
+}
+.social-one .btn {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+/* small screens: payout rows go on two lines (month + amount, then the firm), so a long firm
+   name gets the full width instead of a sliver between the columns */
+@media (max-width: 480px) {
+  .payouts > div {
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+    grid-template-areas: 'ico date amt' 'ico firm firm';
+    row-gap: 2px;
+  }
+  .payouts > div > .px-ico {
+    grid-area: ico;
+    align-self: start;
+    margin-top: 2px;
+  }
+  .p-date {
+    grid-area: date;
+  }
+  .p-amt {
+    grid-area: amt;
+  }
+  .p-firm {
+    grid-area: firm;
+  }
+  .payouts > .total {
+    grid-template-areas: 'ico firm amt';
+  }
+  .payouts > .total .p-date {
+    display: none;
+  }
 }

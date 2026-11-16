@@ -75,9 +75,6 @@ code {
   background: var(--gold);
   color: var(--bg);
 }
-.a-btn:hover {
-  filter: brightness(1.15);
-}
 .a-menu {
   position: absolute;
   right: 0;
@@ -101,11 +98,6 @@ code {
   padding: 10px 14px;
   cursor: pointer;
   text-decoration: none;
-}
-.a-menu button:hover,
-.a-menu a:hover {
-  background: var(--panel-2);
-  color: var(--gold);
 }
 #a-status {
   max-width: 900px;
@@ -189,9 +181,6 @@ code {
   opacity: 0.3;
   cursor: default;
 }
-.a-tools button.del:hover {
-  background: var(--red);
-}
 .a-bi {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -258,9 +247,6 @@ code {
   padding: 10px;
   width: 100%;
   cursor: pointer;
-}
-.a-add:hover {
-  border-color: var(--gold);
 }
 #a-eq {
   width: 100%;
@@ -363,4 +349,31 @@ dialog::backdrop {
   .a-btn {
     min-height: 44px;
   }
+}
+
+/* hover only with a precise pointer (a tap would leave it stuck on touch screens) */
+@media (hover: hover) and (pointer: fine) {
+  .a-btn:hover {
+    filter: brightness(1.15);
+  }
+  .a-menu button:hover,
+  .a-menu a:hover {
+    background: var(--panel-2);
+    color: var(--gold);
+  }
+  .a-tools button.del:hover {
+    background: var(--red);
+  }
+  .a-add:hover {
+    border-color: var(--gold);
+  }
+}
+
+/* press feedback for mouse and touch alike */
+.a-btn:active,
+.a-menu button:active,
+.a-add:active,
+.a-tools button:active {
+  translate: 0 1px;
+  filter: brightness(0.9);
 }

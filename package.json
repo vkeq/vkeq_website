@@ -8,7 +8,9 @@
     "build": "vite build",
     "preview": "vite preview --host",
     "build:single": "node scripts/build-single.mjs",
-    "readme:images": "node scripts/readme/map.cjs && node scripts/readme/shots.cjs"
+    "readme:images": "node scripts/readme/map.cjs && node scripts/readme/shots.cjs",
+    "qa:devices": "node scripts/qa/devices.cjs qa-shots",
+    "qa:worst": "node scripts/qa/worst-case.cjs qa-shots"
   },
   "dependencies": {
     "three": "^0.187.0"

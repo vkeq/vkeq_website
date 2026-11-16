@@ -1,4 +1,5 @@
 // Device detection: phone, tablet or desktop, plus the input in use (touch or mouse/keyboard).
+// Based on capabilities (pointer / hover media queries, touch points, screen size), never on the user agent.
 // The result is written on <html> as data-device / data-input / data-orient so CSS can adapt the whole UI,
 // and modules can read `device` or subscribe with onDeviceChange().
 //
@@ -10,22 +11,14 @@
 const html = document.documentElement;
 const mq = (q) => window.matchMedia?.(q).matches ?? false;
 
+// Capabilities, not user-agent strings: a primary pointer that is coarse (a finger) means a touch
+// device; the short side of the physical screen tells a phone from a tablet.
 function hardware() {
-  const ua = navigator.userAgent || '';
   const touchPoints = navigator.maxTouchPoints || 0;
-  const coarse = mq('(pointer: coarse)');
-  const noHover = mq('(hover: none)');
-  const uaMobile = navigator.userAgentData?.mobile ?? /Mobi|iPhone|iPod|Android.+Mobile|Windows Phone/i.test(ua);
-  // iPadOS reports itself as a Mac; the touch points give it away
-  const uaTablet = /iPad|Tablet|PlayBook|Silk|Android(?!.+Mobile)/i.test(ua) || (/Macintosh/.test(ua) && touchPoints > 1);
-  const touchFirst = coarse || (noHover && touchPoints > 0);
+  const touchFirst = mq('(pointer: coarse)') || (mq('(hover: none)') && touchPoints > 0);
   // short side of the physical screen in CSS pixels (does not change when a desktop window is resized)
   const shortSide = Math.min(screen.width || innerWidth, screen.height || innerHeight);
-
-  let type = 'desktop';
-  if (uaMobile && !uaTablet) type = 'phone';
-  else if (uaTablet) type = 'tablet';
-  else if (touchFirst) type = shortSide < 600 ? 'phone' : 'tablet';
+  let type = touchFirst ? (shortSide < 600 ? 'phone' : 'tablet') : 'desktop';
 
   const forced = new URLSearchParams(location.search).get('device');
   if (['phone', 'tablet', 'desktop'].includes(forced)) type = forced;

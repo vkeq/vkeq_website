@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
     <title>vkeq · The Trader's Dungeon</title>
     <meta name="description" content="vkeq, day trader. Explore my 3D pixel dungeon: who I am, my performance and my socials." />
     <meta name="theme-color" content="#0b0814" />
@@ -45,8 +45,8 @@
     <!-- Intro -->
     <div id="intro">
       <div class="intro-box">
-        <div class="intro-sub" id="intro-sub"></div>
         <h1 id="intro-title">VKEQ</h1>
+        <div class="intro-sub" id="intro-sub"></div>
         <div class="candles"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
         <button id="start"><span class="blink" id="start-text"></span></button>
         <div class="intro-hint" id="intro-hint"></div>
@@ -55,7 +55,7 @@
 
     <!-- Panel -->
     <div id="panel" hidden role="dialog" aria-modal="true" aria-labelledby="panel-title">
-      <div class="panel-box">
+      <div class="panel-box" tabindex="-1">
         <div class="panel-head">
           <h2 id="panel-title"></h2>
           <button id="panel-close" aria-label="Close">&#10005;</button>

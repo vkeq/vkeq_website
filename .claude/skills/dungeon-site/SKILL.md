@@ -60,6 +60,17 @@ Check desktop 1280x800, a phone in portrait AND landscape, and a tablet: use Pla
 `devices['iPhone 13 landscape']`, `devices['iPad (gen 7)']` so `isMobile`/`hasTouch`/UA are emulated and device.js
 picks the right layout (portrait uses a different camera). Touch drags on the joystick need CDP `Input.dispatchTouchEvent`.
 
+## UI polish rules (from the impeccable / mobile-native / review-animations / break-ui passes)
+- No emoji as icons: panel icons are 12x12 pixel maps in `src/icons.js` (`iconHTML(name)`); add new ones there.
+- Every `:hover` lives in the `@media (hover: hover) and (pointer: fine)` block at the end of `style.css`
+  (and `admin.css`), so taps never leave hover stuck. Press feedback is `:active` with the `translate` property.
+- One focus ring for everything (`:focus-visible`, gold); don't add `outline: none` to focus styles.
+- Animate only `transform` / `opacity` / `translate`. The prompt bob uses `translate` because JS owns `transform`.
+- Gesture-driven motion uses transitions, never keyframes (sheet swipe in ui.js, joystick knob return).
+- Panels must survive worst-case content: wrap with `overflow-wrap: anywhere` / `minmax(0, 1fr)`, and every list
+  has an empty state (`payoutsEmpty`, `portalEmpty`). Run `npm run qa:worst` and `npm run qa:devices`
+  (dev server running) after UI changes; screenshots land in `qa-shots/` (gitignored).
+
 ## Typography
 Press Start 2P only at 8/16/24/32/64 px (otherwise it blurs). Body text uses Pixelify Sans.
 

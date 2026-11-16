@@ -4,7 +4,7 @@
 export const FACTS = {
   trading: {
     title: { en: 'Trading terminal', it: 'Terminale di trading' },
-    icon: '💻',
+    icon: 'pc',
     items: [
       { en: 'The CME launched E-mini S&P 500 futures (ES) in 1997 and E-mini Nasdaq-100 futures (NQ) in 1999, opening index futures to smaller traders.', it: 'Il CME ha lanciato i futures E-mini S&P 500 (ES) nel 1997 e gli E-mini Nasdaq-100 (NQ) nel 1999, aprendo i futures sugli indici ai trader più piccoli.' },
       { en: 'On 19 October 1987, "Black Monday", the Dow Jones fell 22.6% in a single session: still its worst day in percentage terms.', it: 'Il 19 ottobre 1987, il "Lunedì Nero", il Dow Jones perse il 22,6% in una sola seduta: ancora oggi il suo giorno peggiore in percentuale.' },
@@ -18,7 +18,7 @@ export const FACTS = {
   },
   gold: {
     title: { en: 'Gold', it: 'Oro' },
-    icon: '🪙',
+    icon: 'coin',
     items: [
       { en: 'All the gold ever mined, roughly 210,000 tonnes, would fit in a cube about 22 metres on each side.', it: 'Tutto l\'oro mai estratto, circa 210.000 tonnellate, starebbe in un cubo di circa 22 metri di lato.' },
       { en: 'On 15 August 1971 President Nixon suspended the dollar\'s convertibility into gold, ending the Bretton Woods system.', it: 'Il 15 agosto 1971 il presidente Nixon sospese la convertibilità del dollaro in oro, mettendo fine al sistema di Bretton Woods.' },
@@ -30,7 +30,7 @@ export const FACTS = {
   },
   oil: {
     title: { en: 'Oil barrels', it: 'Barili di petrolio' },
-    icon: '🛢️',
+    icon: 'barrel',
     items: [
       { en: 'An oil barrel holds 42 US gallons (about 159 litres), a size fixed by Pennsylvania producers in the 1860s.', it: 'Un barile di petrolio contiene 42 galloni USA (circa 159 litri), misura fissata dai produttori della Pennsylvania negli anni 1860.' },
       { en: 'On 20 April 2020 the May WTI futures contract settled at -$37.63: for the first time, sellers paid buyers to take the oil.', it: 'Il 20 aprile 2020 il future WTI di maggio chiuse a -37,63 $: per la prima volta i venditori pagavano chi comprava il petrolio.' },
@@ -42,7 +42,7 @@ export const FACTS = {
   },
   futures: {
     title: { en: 'Futures & options', it: 'Futures e opzioni' },
-    icon: '📦',
+    icon: 'crate',
     items: [
       { en: 'The Dojima Rice Exchange in Osaka, officially recognised in 1730, is considered the first organised futures market.', it: 'Il Dojima Rice Exchange di Osaka, riconosciuto ufficialmente nel 1730, è considerato il primo mercato futures organizzato.' },
       { en: 'The Chicago Board of Trade was founded in 1848 to bring order to the grain trade of the Midwest.', it: 'Il Chicago Board of Trade fu fondato nel 1848 per mettere ordine nel commercio di cereali del Midwest.' },
@@ -53,7 +53,7 @@ export const FACTS = {
   },
   books: {
     title: { en: 'Old trading books', it: 'Vecchi libri di trading' },
-    icon: '📚',
+    icon: 'books',
     items: [
       { en: '"Be fearful when others are greedy, and greedy when others are fearful." Warren Buffett, 1986 letter to shareholders.', it: '"Abbi paura quando gli altri sono avidi, e sii avido quando gli altri hanno paura." Warren Buffett, lettera agli azionisti del 1986.' },
       { en: '"The market can remain irrational longer than you can remain solvent." Often attributed to John Maynard Keynes.', it: '"Il mercato può restare irrazionale più a lungo di quanto tu possa restare solvibile." Frase spesso attribuita a John Maynard Keynes.' },

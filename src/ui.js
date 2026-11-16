@@ -6,6 +6,7 @@ import { FACTS, randomFact } from './facts.js';
 import { logoDataURL } from './logos.js';
 import { loadKey, decryptToken, setSessionToken } from './adminkey.js';
 import { device, onDeviceChange } from './device.js';
+import { iconHTML } from './icons.js';
 
 const logoHTML = (s, cls) => {
   const url = logoDataURL(s.icon || s.id);
@@ -31,12 +32,12 @@ function openPanel(title, html, { onClose, wide = false, accent = '#f5c542', aft
   $('#panel-body').innerHTML = html;
   p.querySelector('.panel-box').classList.toggle('wide', wide);
   p.style.setProperty('--accent', accent);
-  p.querySelector('.panel-box').style.transform = '';
+  if (p.hidden) resetSheet();
   $('#panel-close').setAttribute('aria-label', t('close'));
   if (p.hidden) {
     p.hidden = false;
     onCloseCb = onClose || null;
-    requestAnimationFrame(() => $('#panel-close').focus());
+    requestAnimationFrame(() => p.querySelector('.panel-box').focus({ preventScroll: true })); // the dialog itself takes focus; Tab reaches its controls
   }
   after?.();
 }
@@ -82,30 +83,84 @@ export function initPanel() {
 }
 
 // Phones show panels as a bottom sheet: drag the header down to close it.
+// The sheet follows the finger 1:1, the backdrop fades with it, and on release it either
+// leaves (dragged past 30% of its height, at most 140px, or flicked down) or snaps back fast.
+const SHEET_EASE = 'cubic-bezier(0.32, 0.72, 0, 1)'; // steep start, gentle settle (iOS sheet curve)
+const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 function initSheetSwipe() {
-  const box = $('#panel .panel-box');
-  const head = $('#panel .panel-head');
+  const p = $('#panel');
+  const box = p.querySelector('.panel-box');
+  const head = p.querySelector('.panel-head');
   let y0 = null;
   let dy = 0;
+  let lastY = 0;
+  let lastT = 0;
+  let speed = 0; // px per ms, downwards positive
+  const setDrag = (y) => {
+    box.style.transform = y ? `translateY(${Math.round(y)}px)` : '';
+    // backdrop fades as the sheet leaves
+    const k = Math.max(0, 1 - y / (box.offsetHeight || 1));
+    p.style.backgroundColor = y ? `rgba(5, 3, 10, ${(0.55 * k).toFixed(3)})` : '';
+  };
   head.addEventListener('pointerdown', (e) => {
     if (!device.phone || device.orient !== 'portrait' || e.target.closest('button')) return;
     y0 = e.clientY;
     dy = 0;
+    speed = 0;
+    lastY = e.clientY;
+    lastT = e.timeStamp;
+    box.style.transition = 'none'; // catch the sheet even mid-animation
     head.setPointerCapture?.(e.pointerId);
   });
   head.addEventListener('pointermove', (e) => {
     if (y0 === null) return;
-    dy = Math.max(0, e.clientY - y0);
-    box.style.transform = `translateY(${Math.round(dy / 4) * 4}px)`;
+    const raw = e.clientY - y0;
+    // past the top it resists instead of moving freely
+    dy = raw >= 0 ? raw : raw * 0.15;
+    const dt = e.timeStamp - lastT;
+    if (dt > 0) speed = 0.7 * ((e.clientY - lastY) / dt) + 0.3 * speed;
+    lastY = e.clientY;
+    lastT = e.timeStamp;
+    setDrag(dy);
   });
-  const end = () => {
+  const end = (e) => {
     if (y0 === null) return;
     y0 = null;
-    box.style.transform = '';
-    if (dy > 90) closePanel();
+    // a finger that stopped before lifting is not a flick
+    if (e.timeStamp - lastT > 100) speed = 0;
+    const leave = dy > Math.min(box.offsetHeight * 0.3, 140) || (speed > 0.5 && dy > 16);
+    if (reducedMotion()) {
+      box.style.transition = '';
+      setDrag(0);
+      if (leave) closePanel();
+      return;
+    }
+    if (leave) {
+      box.style.transition = `transform 200ms ${SHEET_EASE}`;
+      p.style.transition = 'background-color 200ms linear';
+      box.style.transform = 'translateY(100%)';
+      p.style.backgroundColor = 'rgba(5, 3, 10, 0)';
+      setTimeout(() => {
+        closePanel();
+        resetSheet();
+      }, 200);
+    } else {
+      box.style.transition = `transform 240ms ${SHEET_EASE}`;
+      p.style.transition = 'background-color 240ms linear';
+      setDrag(0);
+    }
   };
   head.addEventListener('pointerup', end);
   head.addEventListener('pointercancel', end);
+}
+// clears whatever a swipe left on the panel (called when a panel opens or closes)
+function resetSheet() {
+  const p = $('#panel');
+  const box = p.querySelector('.panel-box');
+  box.style.transform = '';
+  box.style.transition = '';
+  p.style.transition = '';
+  p.style.backgroundColor = '';
 }
 
 // ---------------- Content panels ----------------
@@ -148,21 +203,30 @@ export const showBio = panel(() => {
 
 export const showPerformance = panel((onClose) => {
   const p = CONFIG.performance;
+  const hasCurve = (p.equity || []).length > 1;
+  const payouts = p.payouts || [];
   openPanel(
     t('performanceTitle'),
     `<div class="muted period">${esc(tr(p.period))}</div>
      <div class="stats" style="--cols:${p.stats.length % 3 === 0 || p.stats.length > 4 ? 3 : Math.min(p.stats.length, 2)}">${p.stats
        .map((s) => `<div class="stat ${esc(s.tone || '')}"><span>${esc(tr(s.label))}</span><b>${esc(statValue(s.value))}</b></div>`)
        .join('')}</div>
-     <canvas class="equity" width="300" height="110" aria-label="${t('equityAria')}"></canvas>
+     ${hasCurve ? `<canvas class="equity" width="300" height="110" role="img" aria-label="${t('equityAria')}"></canvas>` : ''}
      <h3>${t('payoutsTitle')}</h3>
-     <div class="payouts">${p.payouts
-       .map((x) => `<div><span>${esc(monthLabel(x.date))}</span><span>${esc(x.firm)}</span><b>${esc(money(x.amount))}</b></div>`)
+     ${
+       payouts.length
+         ? `<div class="payouts">${payouts
+       .map(
+         (x) =>
+           `<div>${iconHTML('coin')}<span class="p-date">${esc(monthLabel(x.date))}</span><span class="p-firm">${esc(x.firm)}</span><b class="p-amt">${esc(money(x.amount))}</b></div>`,
+       )
        .join('')}
-       <div class="total"><span></span><span>${t('payoutsTotal')}</span><b>${esc(money(payoutsTotal()))}</b></div>
-     </div>
+       <div class="total">${iconHTML('chest')}<span class="p-date"></span><span class="p-firm">${t('payoutsTotal')}</span><b class="p-amt">${esc(money(payoutsTotal()))}</b></div>
+     </div>`
+         : `<p class="muted empty">${t('payoutsEmpty')}</p>`
+     }
      <p class="disclaimer">${esc(tr(p.disclaimer))}</p>`,
-    { onClose, wide: true, after: () => drawEquity($('#panel-body canvas.equity'), p.equity) },
+    { onClose, wide: true, after: () => hasCurve && drawEquity($('#panel-body canvas.equity'), p.equity) },
   );
 });
 
@@ -172,7 +236,7 @@ export const showFact = panel((cat, fact = randomFact(cat), onAnother) => {
   openPanel(
     tr(c.title),
     `<div class="fact">
-       <div class="fact-ico">${c.icon}</div>
+       <div class="fact-ico">${iconHTML(c.icon)}</div>
        <p>${esc(tr(fact))}</p>
      </div>
      <button class="btn-row" id="fact-next">${t('another')} &raquo;</button>`,
@@ -202,7 +266,7 @@ export const showSocial = panel((s) => {
 export const showAllSocials = panel(() => {
   openPanel(
     t('portalTitle'),
-    `<p>${t('portalBody')}</p>
+    `<p>${t(CONFIG.socials.length ? 'portalBody' : 'portalEmpty')}</p>
      <div class="social-list">${CONFIG.socials
        .map(
          (s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener" style="--c:${esc(s.color)}">
@@ -216,12 +280,12 @@ export const showAllSocials = panel(() => {
 
 export const showMenu = panel((go) => {
   const m = t('menuItems');
-  const icons = { bio: '📖', chest: '💰', portal: '🌀', welcome: '📜' };
+  const icons = { bio: 'book', chest: 'chest', portal: 'portal', welcome: 'scroll' };
   openPanel(
     t('menuTitle'),
     `<p>${t('menuBody')}</p>
      <div class="menu">${Object.keys(icons)
-       .map((k) => `<button data-go="${k}"><span class="ico">${icons[k]}</span>${m[k]}</button>`)
+       .map((k) => `<button data-go="${k}">${iconHTML(icons[k])}${m[k]}</button>`)
        .join('')}</div>
      <p class="muted">${t('menuHint')}</p>`,
     {
