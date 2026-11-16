@@ -58,3 +58,10 @@ Press Start 2P only at 8/16/24/32/64 px (otherwise it blurs). Body text uses Pix
 `npm run build:single` writes `dist-single/vkeq-dungeon.html` (one self-contained page: inlined JS/CSS, only Google Fonts external).
 Publish that file with the Artifact tool to show the owner the site inside Claude; republish the same path to update it.
 The admin page is not part of that build (it needs the dev server or GitHub).
+
+## README images
+`README.md` shows `docs/readme/*.png` (banner 3840x1280, map ~3900x2800, highlights 3840x2160).
+Regenerate with the dev server running: `npm run readme:images` (or `node scripts/readme/map.cjs`, `node scripts/readme/shots.cjs docs/readme <prefix>`).
+The map is drawn by `scripts/readme/map-draw.js` from the real grid + torch positions; prop positions there are copied
+from `src/rooms/*.js`, so update both when moving props. Shots use `window.__dungeon.photo({...})` (fixed camera, no UI).
+Development / admin / hosting notes moved to `docs/DEVELOPMENT.md`. README text must not assume vkeq's pronouns.

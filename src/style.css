@@ -843,3 +843,12 @@ canvas.equity.big {
   color: var(--gold);
   font-size: 15px;
 }
+
+/* photo mode for README captures */
+body.photo #hud,
+body.photo #lang,
+body.photo #prompt,
+body.photo #labels,
+body.photo #intro {
+  display: none !important;
+}

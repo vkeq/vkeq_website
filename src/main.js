@@ -44,10 +44,13 @@ async function boot() {
   let userZoom = 1;
   let renderHeight = 1;
 
+  // Photo mode (used only by the scripts that make README images): fixed camera, no UI.
+  const photo = { pixelScale: 0, camera: null, hideUI: false };
+
   function resize() {
     const w = window.innerWidth;
     const h = window.innerHeight;
-    const pixelScale = w < 700 ? 2 : w > 1800 ? 4 : 3;
+    const pixelScale = photo.pixelScale || (w < 700 ? 2 : w > 1800 ? 4 : 3);
     renderHeight = Math.ceil(h / pixelScale);
     renderer.setSize(Math.ceil(w / pixelScale), renderHeight, false);
     camera.aspect = w / h;
@@ -128,7 +131,7 @@ async function boot() {
   onLangChange(labelTexts);
   const lv = new THREE.Vector3();
   function updateLabels() {
-    labelLayer.hidden = !started;
+    labelLayer.hidden = !started || photo.hideUI;
     if (!started) return;
     const far = vision.far.value;
     labels.forEach((o, i) => {
@@ -464,6 +467,10 @@ async function boot() {
       camTarget.set(SPAWN.x + Math.sin(time * 0.15) * 2, 0.6, SPAWN.z - 4 + Math.cos(time * 0.12) * 1.5);
       camera.position.copy(camTarget).add(tmp.set(Math.sin(time * 0.1) * 4, 12, 10));
     }
+    if (photo.camera) {
+      camera.position.set(...photo.camera.pos);
+      camTarget.set(...photo.camera.target);
+    }
     camera.lookAt(camTarget);
     camera.updateMatrixWorld();
     updateVision(camera, started ? pos : camTarget);
@@ -503,6 +510,23 @@ async function boot() {
 
   // Debug / automated screenshot hooks
   window.__dungeon = {
+    world,
+    // photo({ pixelScale, camera: { pos: [x,y,z], target: [x,y,z] }, vision: [near, far], hideUI })
+    photo(opts = {}) {
+      if (opts.pixelScale !== undefined) photo.pixelScale = opts.pixelScale;
+      if (opts.camera !== undefined) photo.camera = opts.camera;
+      if (opts.vision) [vision.near.value, vision.far.value] = opts.vision;
+      if (opts.hideUI !== undefined) {
+        photo.hideUI = opts.hideUI;
+        document.body.classList.toggle('photo', !!opts.hideUI);
+      }
+      if (opts.facing !== undefined) player.root.rotation.y = opts.facing;
+      resize();
+      if (opts.fov) {
+        camera.fov = opts.fov;
+        camera.updateProjectionMatrix();
+      }
+    },
     pos,
     scene,
     renderer,
