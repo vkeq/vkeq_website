@@ -48,9 +48,9 @@ the dungeon.
 
 | | Desktop | Phone / tablet |
 | --- | --- | --- |
-| Walk | <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or arrow keys, or click the floor | Tap the floor |
-| Run | Hold <kbd>Shift</kbd> | — |
-| Interact | Walk up to an object and press <kbd>E</kbd> / <kbd>Space</kbd>, or click it | Tap the object or the **A** button |
+| Walk | <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or arrow keys, or click the floor | Drag the joystick (bottom left), or tap the floor |
+| Run | Hold <kbd>Shift</kbd> | Push the joystick all the way |
+| Interact | Walk up to an object and press <kbd>E</kbd> / <kbd>Space</kbd>, or click it or its prompt | Tap the object, its prompt or the **A** button |
 | Jump to a room | **MENU** (or <kbd>M</kbd>) | **MENU** |
 | Close a panel | <kbd>Esc</kbd> or ✕ | ✕ |
 
@@ -60,6 +60,9 @@ the dungeon.
 - **Glowing objects** open panels: the book (about me), the chest (performance), the portal and altars (socials).
   Barrels, crates, gold, shelves and the PC tell a different market anecdote every time.
 - **Pixel flags** (top right) switch between English and Italian. Two small buttons toggle music and sound effects.
+- **Every screen gets its own layout.** The dungeon detects a phone, a tablet or a computer: phones get a joystick, bigger
+  buttons and panels that slide up from the bottom (drag them down to close); tablets get roomier controls; computers keep
+  the keyboard and mouse. Touch laptops switch layout as soon as you touch the screen.
 
 ### Highlights
 

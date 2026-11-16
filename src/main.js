@@ -11,6 +11,8 @@ import { labels } from './voxel.js';
 import { t, onLangChange } from './i18n.js';
 import { IS_DRAFT } from './config.js';
 import { applyVision, updateVision, vision } from './vision.js';
+import { device, onDeviceChange, haptic } from './device.js';
+import { createJoystick } from './joystick.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -50,7 +52,9 @@ async function boot() {
   function resize() {
     const w = window.innerWidth;
     const h = window.innerHeight;
-    const pixelScale = photo.pixelScale || (w < 700 ? 2 : w > 1800 ? 4 : 3);
+    // phones always render at 1/2 (small screens need every pixel), tablets at 1/3, desktops by window width
+    const auto = device.phone || w < 700 ? 2 : device.tablet ? 3 : w > 1800 ? 4 : 3;
+    const pixelScale = photo.pixelScale || auto;
     renderHeight = Math.ceil(h / pixelScale);
     renderer.setSize(Math.ceil(w / pixelScale), renderHeight, false);
     camera.aspect = w / h;
@@ -216,7 +220,9 @@ async function boot() {
   }
   function interact(it) {
     initAudio();
+    haptic(12);
     keys.clear();
+    joystick.reset();
     stopPath();
     playItemSound(it);
     it.action();
@@ -230,7 +236,7 @@ async function boot() {
   // ---------------- Input ----------------
   const keys = new Set();
   let started = false;
-  const isTouch = matchMedia('(pointer: coarse)').matches;
+  const joystick = createJoystick($('#stick'), { onStart: () => (initAudio(), stopPath()) });
 
   window.addEventListener('keydown', (e) => {
     if (!started) {
@@ -299,6 +305,8 @@ async function boot() {
   // ---------------- HUD buttons ----------------
   const btnAction = $('#btn-action');
   btnAction.addEventListener('click', () => nearest && interact(nearest));
+  // the floating "press E" prompt is a button too (handy on touch screens)
+  $('#prompt').addEventListener('click', () => nearest && !UI.isPanelOpen() && interact(nearest));
   $('#btn-menu').addEventListener('click', () => {
     sfx.ui();
     UI.showMenu(goTo);
@@ -324,11 +332,15 @@ async function boot() {
   // ---------------- Intro ----------------
   const introText = () => {
     $('#intro-sub').textContent = t('introSub');
-    $('#start-text').textContent = '▶ ' + t(isTouch ? 'introStartTouch' : 'introStart');
-    $('#intro-hint').textContent = t(isTouch ? 'introHintTouch' : 'introHint');
+    $('#start-text').textContent = '▶ ' + t(device.touch ? 'introStartTouch' : 'introStart');
+    $('#intro-hint').textContent = t(device.touch ? 'introHintTouch' : 'introHint');
   };
   introText();
   onLangChange(introText);
+  onDeviceChange(() => {
+    introText();
+    resize();
+  });
 
   function start() {
     if (started) return;
@@ -383,6 +395,12 @@ async function boot() {
       if (keys.has('s') || keys.has('arrowdown')) mz += 1;
       if (keys.has('a') || keys.has('arrowleft')) mx -= 1;
       if (keys.has('d') || keys.has('arrowright')) mx += 1;
+      const stick = joystick.read();
+      if (!mx && !mz && stick.mag > 0) {
+        mx = stick.x;
+        mz = stick.y;
+        if (path) stopPath();
+      }
       if (!mx && !mz && path) {
         const wp = path[0];
         const dx = wp.x - pos.x;
@@ -402,7 +420,11 @@ async function boot() {
       const len = Math.hypot(mx, mz);
       mx /= len;
       mz /= len;
-      speed = keys.has('shift') ? RUN_SPEED : WALK_SPEED;
+      const stickMag = joystick.read().mag;
+      if (stickMag > 0 && !keys.size) {
+        // analog stick: gentle push walks slower, pushing all the way runs
+        speed = stickMag > 0.92 ? RUN_SPEED : WALK_SPEED * Math.max(0.55, stickMag / 0.92);
+      } else speed = keys.has('shift') ? RUN_SPEED : WALK_SPEED;
       const ox = pos.x;
       const oz = pos.z;
       // small sub-steps so the player slides right up to walls and props
@@ -479,8 +501,8 @@ async function boot() {
     if (started && nearest && !UI.isPanelOpen()) {
       tmp.set(nearest.x, 2.1, nearest.z).project(camera);
       const text = typeof nearest.prompt === 'function' ? nearest.prompt() : nearest.prompt;
-      UI.setPrompt(text, { x: (tmp.x * 0.5 + 0.5) * window.innerWidth, y: (-tmp.y * 0.5 + 0.5) * window.innerHeight }, isTouch);
-      btnAction.hidden = !isTouch;
+      UI.setPrompt(text, { x: (tmp.x * 0.5 + 0.5) * window.innerWidth, y: (-tmp.y * 0.5 + 0.5) * window.innerHeight }, device.touch);
+      btnAction.hidden = !device.touch;
     } else {
       UI.setPrompt(null);
       btnAction.hidden = true;
@@ -528,6 +550,8 @@ async function boot() {
       }
     },
     pos,
+    device,
+    joystick,
     scene,
     renderer,
     goTo,

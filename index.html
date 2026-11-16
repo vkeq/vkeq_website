@@ -32,11 +32,12 @@
         </div>
       </div>
       <div id="room-toast"></div>
-      <button id="btn-action" hidden>A</button>
+      <div id="stick" aria-hidden="true"><div class="stick-base"><div class="stick-knob"></div></div></div>
+      <button id="btn-action" hidden aria-label="Interact">A</button>
       <button id="btn-admin" title="Admin" aria-label="Admin"><i class="lock"></i></button>
     </div>
 
-    <div id="prompt" hidden><kbd>E</kbd><span></span></div>
+    <div id="prompt" hidden role="button"><kbd>E</kbd><span></span></div>
 
     <!-- Language switch (always visible, top right) -->
     <div id="lang" role="group" aria-label="Language"></div>

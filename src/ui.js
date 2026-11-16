@@ -5,6 +5,7 @@ import { t, tr, getLang, setLang, onLangChange } from './i18n.js';
 import { FACTS, randomFact } from './facts.js';
 import { logoDataURL } from './logos.js';
 import { loadKey, decryptToken, setSessionToken } from './adminkey.js';
+import { device, onDeviceChange } from './device.js';
 
 const logoHTML = (s, cls) => {
   const url = logoDataURL(s.icon || s.id);
@@ -30,6 +31,7 @@ function openPanel(title, html, { onClose, wide = false, accent = '#f5c542', aft
   $('#panel-body').innerHTML = html;
   p.querySelector('.panel-box').classList.toggle('wide', wide);
   p.style.setProperty('--accent', accent);
+  p.querySelector('.panel-box').style.transform = '';
   $('#panel-close').setAttribute('aria-label', t('close'));
   if (p.hidden) {
     p.hidden = false;
@@ -68,11 +70,47 @@ export function initPanel() {
     if (e.key === 'Escape') closePanel();
   });
   onLangChange(() => rerender?.());
+  // switching between touch and mouse redraws the open panel (controls help differs);
+  // rotating the phone does not, so a half-typed password is never lost
+  let input = device.input;
+  onDeviceChange(() => {
+    if (device.input === input) return;
+    input = device.input;
+    if (!$('#admin-login')) rerender?.();
+  });
+  initSheetSwipe();
+}
+
+// Phones show panels as a bottom sheet: drag the header down to close it.
+function initSheetSwipe() {
+  const box = $('#panel .panel-box');
+  const head = $('#panel .panel-head');
+  let y0 = null;
+  let dy = 0;
+  head.addEventListener('pointerdown', (e) => {
+    if (!device.phone || device.orient !== 'portrait' || e.target.closest('button')) return;
+    y0 = e.clientY;
+    dy = 0;
+    head.setPointerCapture?.(e.pointerId);
+  });
+  head.addEventListener('pointermove', (e) => {
+    if (y0 === null) return;
+    dy = Math.max(0, e.clientY - y0);
+    box.style.transform = `translateY(${Math.round(dy / 4) * 4}px)`;
+  });
+  const end = () => {
+    if (y0 === null) return;
+    y0 = null;
+    box.style.transform = '';
+    if (dy > 90) closePanel();
+  };
+  head.addEventListener('pointerup', end);
+  head.addEventListener('pointercancel', end);
 }
 
 // ---------------- Content panels ----------------
 export function controlsHTML() {
-  if (matchMedia('(pointer: coarse)').matches) return `<div class="controls">${t('controlsTouch').map((l) => `<div>\u25B8 ${l}</div>`).join('')}</div>`;
+  if (device.touch) return `<div class="controls">${t('controlsTouch').map((l) => `<div>\u25B8 ${l}</div>`).join('')}</div>`;
   const c = t('controls');
   return `<div class="controls">
       <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <kbd>←</kbd><kbd>→</kbd> ${c[0]}</div>
@@ -365,7 +403,9 @@ export function setPrompt(text, screen, touch) {
     return;
   }
   p.hidden = false;
-  p.querySelector('kbd').hidden = touch;
+  const kbd = p.querySelector('kbd');
+  const key = touch ? 'A' : 'E';
+  if (kbd.textContent !== key) kbd.textContent = key;
   const span = p.querySelector('span');
   if (span.textContent !== text) span.textContent = text;
   const tr = `translate(${Math.round(screen.x)}px, ${Math.round(screen.y)}px) translate(-50%, -100%)`;

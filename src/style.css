@@ -636,7 +636,7 @@ canvas.equity.big {
   #room-toast { font-size: 8px; line-height: 8px; }
   #intro-title { font-size: 48px; line-height: 48px; }
   #start { font-size: 8px; line-height: 16px; }
-  .payouts div { grid-template-columns: 92px 1fr auto; white-space: nowrap; }
+  .payouts div { grid-template-columns: 78px minmax(0, 1fr) auto; gap: 8px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -851,4 +851,361 @@ body.photo #prompt,
 body.photo #labels,
 body.photo #intro {
   display: none !important;
+}
+
+/* =====================================================================
+   Device-adaptive UI
+   <html data-device="phone|tablet|desktop" data-input="touch|mouse" data-orient="portrait|landscape">
+   is set by src/device.js. Desktop keeps the layout above; touch devices get
+   a joystick, bigger touch targets and panels sized for the screen.
+   ===================================================================== */
+
+/* --- on-screen joystick (touch only) --- */
+#stick {
+  display: none;
+  position: absolute;
+  left: max(16px, env(safe-area-inset-left, 0px));
+  bottom: max(20px, env(safe-area-inset-bottom, 0px));
+  width: var(--stick, 116px);
+  height: var(--stick, 116px);
+  pointer-events: auto;
+  touch-action: none;
+}
+.stick-base {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(23, 17, 38, 0.55);
+  clip-path: polygon(25% 0, 75% 0, 100% 25%, 100% 75%, 75% 100%, 25% 100%, 0 75%, 0 25%);
+  box-shadow: inset 0 0 0 4px rgba(58, 47, 85, 0.9), inset 0 0 0 8px rgba(0, 0, 0, 0.5);
+}
+.stick-base::before,
+.stick-base::after {
+  /* pixel cross that hints at the four directions */
+  content: '';
+  position: absolute;
+  background: rgba(154, 144, 184, 0.25);
+}
+.stick-base::before { width: 4px; height: 70%; }
+.stick-base::after { width: 70%; height: 4px; }
+.stick-knob {
+  position: relative;
+  z-index: 1;
+  width: 40%;
+  height: 40%;
+  background: var(--gold);
+  box-shadow: inset -6px -6px 0 #a8761c, inset 4px 4px 0 #ffe9a8, 0 0 0 4px #000;
+  opacity: 0.85;
+}
+#stick.active .stick-knob {
+  opacity: 1;
+}
+#stick.active .stick-base {
+  background: rgba(23, 17, 38, 0.75);
+}
+
+/* --- the floating prompt can be clicked / tapped --- */
+#prompt {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* --- touch input (phones, tablets, touch laptops in use) --- */
+html[data-input='touch'] #stick {
+  display: block;
+}
+html[data-input='touch'] .hud-buttons {
+  gap: 12px;
+}
+html[data-input='touch'] .hud-buttons button {
+  height: 36px;
+  min-width: 36px;
+  padding: 0 10px;
+}
+html[data-input='touch'] .hud-buttons .note,
+html[data-input='touch'] .hud-buttons .speaker {
+  width: 14px;
+  height: 14px;
+}
+html[data-input='touch'] #lang button {
+  height: 34px;
+}
+html[data-input='touch'] #btn-action {
+  right: max(24px, env(safe-area-inset-right, 0px));
+  bottom: max(64px, calc(env(safe-area-inset-bottom, 0px) + 48px));
+}
+html[data-input='touch'] #btn-admin {
+  width: 30px;
+  height: 30px;
+}
+html[data-input='touch'] #prompt {
+  padding: 10px 14px;
+}
+html[data-input='touch'] #panel-close {
+  min-width: 40px;
+  min-height: 40px;
+  margin: -8px -8px -8px 0;
+}
+html[data-input='touch'] .menu button {
+  min-height: 56px;
+}
+html[data-input='touch'] .btn-row,
+html[data-input='touch'] .btn {
+  min-height: 44px;
+}
+html[data-input='touch'] .social-list a {
+  min-height: 56px;
+}
+html[data-input='touch'] #game {
+  cursor: default;
+}
+
+/* safe areas (notches, rounded corners) everywhere */
+.hud-id {
+  top: max(16px, env(safe-area-inset-top, 0px));
+  left: max(16px, env(safe-area-inset-left, 0px));
+}
+#lang {
+  top: max(16px, env(safe-area-inset-top, 0px));
+  right: max(16px, env(safe-area-inset-right, 0px));
+}
+.hud-right {
+  top: calc(max(16px, env(safe-area-inset-top, 0px)) + 48px);
+  right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* --- phone --- */
+html[data-device='phone'] {
+  --stick: 116px;
+}
+html[data-device='phone'] #lang {
+  gap: 8px;
+}
+html[data-device='phone'] #lang button {
+  padding: 0 7px;
+}
+html[data-device='phone'] #lang button span {
+  display: none; /* flags only: the bar stays narrow */
+}
+html[data-device='phone'] #hud-tag {
+  font-size: 14px;
+  margin-top: 6px;
+}
+html[data-device='phone'] .hud-room {
+  font-size: 16px;
+}
+html[data-device='phone'] #minimap {
+  width: 123px;
+  height: 81px;
+}
+html[data-device='phone'] .wlabel {
+  font-size: 14px;
+}
+html[data-device='phone'] #prompt {
+  font-size: 16px;
+}
+html[data-device='phone'] #room-toast {
+  font-size: 16px;
+  line-height: 16px;
+}
+html[data-device='phone'] #btn-action {
+  width: 68px;
+  height: 68px;
+}
+html[data-device='phone'] .stat b {
+  font-size: 8px;
+  line-height: 16px;
+}
+html[data-device='phone'] .facts {
+  grid-template-columns: 1fr;
+}
+html[data-device='phone'] #intro-title {
+  font-size: 48px;
+  line-height: 48px;
+}
+html[data-device='phone'] #start {
+  font-size: 8px;
+  line-height: 16px;
+  padding: 16px 12px;
+}
+
+/* phone held upright: toast above the joystick, panels as bottom sheets */
+html[data-device='phone'][data-orient='portrait'] #room-toast {
+  bottom: calc(max(20px, env(safe-area-inset-bottom, 0px)) + var(--stick) + 28px);
+}
+html[data-device='phone'][data-orient='portrait'] #panel {
+  place-items: end stretch;
+  padding: 0;
+  padding-top: max(24px, env(safe-area-inset-top, 0px));
+}
+html[data-device='phone'][data-orient='portrait'] .panel-box,
+html[data-device='phone'][data-orient='portrait'] .panel-box.wide {
+  width: 100%;
+  max-height: 88dvh;
+  animation: sheet 0.22s steps(4);
+  box-shadow: 0 -4px 0 0 var(--edge), 0 -8px 0 0 #000;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+html[data-device='phone'][data-orient='portrait'] .panel-head {
+  position: relative;
+  padding-top: 22px;
+  touch-action: none;
+}
+html[data-device='phone'][data-orient='portrait'] .panel-head::before {
+  /* grab handle: drag down to close */
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 40px;
+  height: 4px;
+  margin-left: -20px;
+  background: var(--edge);
+}
+html[data-device='phone'][data-orient='portrait'] #panel-body {
+  padding: 14px 16px 22px;
+}
+@keyframes sheet {
+  from { transform: translateY(40%); opacity: 0; }
+}
+
+/* phone held sideways: very little height, so everything gets compact */
+html[data-device='phone'][data-orient='landscape'] {
+  --stick: 100px;
+}
+html[data-device='phone'][data-orient='landscape'] #hud-tag {
+  display: none;
+}
+html[data-device='phone'][data-orient='landscape'] .hud-room {
+  margin-top: 8px;
+}
+html[data-device='phone'][data-orient='landscape'] #minimap {
+  width: 102px;
+  height: 67px;
+}
+html[data-device='phone'][data-orient='landscape'] .hud-right {
+  gap: 10px;
+}
+html[data-device='phone'][data-orient='landscape'] #room-toast {
+  top: max(20px, env(safe-area-inset-top, 0px));
+  bottom: auto;
+}
+html[data-device='phone'][data-orient='landscape'] #btn-action {
+  width: 60px;
+  height: 60px;
+  bottom: max(56px, calc(env(safe-area-inset-bottom, 0px) + 44px));
+}
+html[data-device='phone'][data-orient='landscape'] #panel {
+  padding: max(8px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px))
+    max(16px, env(safe-area-inset-left, 0px));
+}
+html[data-device='phone'][data-orient='landscape'] .panel-box {
+  width: min(560px, 100%);
+  max-height: calc(100dvh - 24px);
+}
+html[data-device='phone'][data-orient='landscape'] .panel-box.wide {
+  width: min(700px, 100%);
+}
+html[data-device='phone'][data-orient='landscape'] .panel-head {
+  padding: 10px 14px;
+}
+html[data-device='phone'][data-orient='landscape'] #panel-body {
+  padding: 10px 16px 14px;
+}
+html[data-device='phone'][data-orient='landscape'] .intro-box {
+  padding: 18px 20px 16px;
+}
+html[data-device='phone'][data-orient='landscape'] #intro-title {
+  font-size: 32px;
+  line-height: 32px;
+  margin: 14px 0 6px;
+}
+html[data-device='phone'][data-orient='landscape'] .candles {
+  height: 40px;
+  margin: 6px 0 10px;
+}
+
+/* --- tablet: roomy, bigger targets, centred panels --- */
+html[data-device='tablet'] {
+  --stick: 148px;
+}
+html[data-device='tablet'] body {
+  font-size: 19px;
+}
+html[data-device='tablet'] #minimap {
+  width: 205px;
+  height: 135px;
+}
+html[data-input='touch'][data-device='tablet'] .hud-buttons button {
+  height: 40px;
+  min-width: 40px;
+  padding: 0 12px;
+}
+html[data-device='tablet'] #btn-action {
+  width: 84px;
+  height: 84px;
+  font-size: 24px;
+}
+html[data-device='tablet'] .wlabel {
+  font-size: 18px;
+}
+html[data-device='tablet'] .panel-box {
+  width: min(580px, 100%);
+  max-height: min(84dvh, 860px);
+}
+html[data-device='tablet'] .panel-box.wide {
+  width: min(720px, 100%);
+}
+html[data-device='tablet'][data-orient='portrait'] #room-toast {
+  bottom: calc(max(20px, env(safe-area-inset-bottom, 0px)) + var(--stick) + 32px);
+}
+
+/* --- desktop: pointer hints only where a mouse can hover --- */
+@media (hover: hover) {
+  #prompt:hover {
+    background: var(--panel-2);
+  }
+}
+
+/* photo mode for README captures: no touch controls either */
+body.photo #stick,
+body.photo #btn-action {
+  display: none !important;
+}
+
+/* panels never grow wider than the screen, whatever the content (long firm names, links...) */
+#panel {
+  grid-template-columns: minmax(0, 1fr);
+}
+.panel-box {
+  min-width: 0;
+  justify-self: center;
+}
+html[data-device='phone'][data-orient='portrait'] .panel-box {
+  justify-self: stretch;
+}
+.payouts div {
+  grid-template-columns: 90px minmax(0, 1fr) auto;
+  align-items: baseline;
+}
+.payouts span:nth-child(2) {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+html[data-device='phone'] .payouts div,
+html[data-device='phone'] .payouts span:nth-child(2) {
+  white-space: normal;
+}
+html[data-device='phone'] .payouts div {
+  grid-template-columns: 78px minmax(0, 1fr) auto;
+  gap: 8px;
+}
+.payouts span:first-child,
+.payouts b {
+  white-space: nowrap;
+}
+/* on phones the open panel sits above the language flags (they would cover its close button) */
+html[data-device='phone'] #panel {
+  z-index: 45;
 }

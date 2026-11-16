@@ -34,6 +34,13 @@ Vite + Three.js, no framework. Low-res render (canvas at 1/2-1/4 size, `image-re
   footsteps by surface, torch crackle and portal hum by distance. Add a sound by adding a function to `sfx`.
   `radius` must be reachable: some free cell centre must be closer than `radius - 0.15`, or click-to-walk fails.
 - `src/ui.js` – HTML panels (`openPanel`), HUD, minimap, pixel equity chart. `src/voxel.js` – `box()`, `glow()`, `voxelText()`, `label()` (HTML labels anchored to 3D objects).
+- `src/device.js` – device detection: sets `<html data-device="phone|tablet|desktop" data-input="touch|mouse" data-orient>`
+  (UA + pointer/hover media + screen short side; `?device=phone` forces one). Input switches live on hybrids.
+  All device layouts are CSS rules on those attributes at the end of `style.css`; JS reads `device.touch/phone/tablet`.
+  Never use `matchMedia('(pointer: coarse)')` directly in game code — use `device`.
+- `src/joystick.js` – on-screen joystick (`#stick`, touch input only), read in the main loop; full push = run.
+  The floating `#prompt` is clickable (interacts with the nearest object); it shows `A` on touch, `E` with a keyboard.
+  Phone portrait panels are bottom sheets (drag the header down to close, `initSheetSwipe` in ui.js).
 - Camera: follows the player directly and snaps to one render pixel (no easing) so the low-res image never swims.
 - `src/player.js` – voxel trader built with `VoxelPart` (per-voxel shading) + walk animation.
 - Decor: `VoxBatch` (voxel.js) merges many boxes into one InstancedMesh; rugs/barrels/crystals in props.js, wall/floor detail in `world.decorate()`. `src/audio.js` – WebAudio chiptune sfx.
@@ -49,7 +56,9 @@ Each PointLight costs every fragment. Keep total lit lights around 15 (side torc
 Start `npm run dev -- --port 5173`, then use Playwright (pre-installed) with
 `chromium.launch({ args: ['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader'] })`.
 Press Enter to leave the intro; `window.__dungeon.teleport(x, z)` jumps the player, `window.__dungeon.goTo(id)` walks to an interactable.
-Check both 1280x800 and 390x844 (portrait uses a different camera).
+Check desktop 1280x800, a phone in portrait AND landscape, and a tablet: use Playwright `devices['iPhone 13']`,
+`devices['iPhone 13 landscape']`, `devices['iPad (gen 7)']` so `isMobile`/`hasTouch`/UA are emulated and device.js
+picks the right layout (portrait uses a different camera). Touch drags on the joystick need CDP `Input.dispatchTouchEvent`.
 
 ## Typography
 Press Start 2P only at 8/16/24/32/64 px (otherwise it blurs). Body text uses Pixelify Sans.

@@ -352,3 +352,15 @@ dialog::backdrop {
 .a-actions[hidden] {
   display: none;
 }
+
+/* Touch devices: 16px+ inputs (iOS would zoom in on smaller ones) and finger-sized buttons */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+  .a-btn {
+    min-height: 44px;
+  }
+}
