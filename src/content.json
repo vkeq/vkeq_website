@@ -1,8 +1,8 @@
 {
   "name": "vkeq",
   "tagline": {
-    "en": "Day Trader · Futures & Options",
-    "it": "Day Trader · Futures & Options"
+    "en": "Trader · Futures & Options",
+    "it": "Trader · Futures & Options"
   },
   "currency": "USD",
   "contactEmail": "contact@vkeq.com",
@@ -10,7 +10,7 @@
     "avatarInitial": "V",
     "paragraphs": {
       "en": [
-        "Hi, I'm vkeq. I day trade full time: in and out of the market within the same session, never holding overnight.",
+        "Hi, I'm vkeq. I'm a full time trader: in and out of the market within the same session, never holding overnight.",
         "I started like most people, blowing accounts and hunting for the perfect setup. Then I realised the real edge is discipline: a few rules, followed every single day.",
         "Here I share my journey, my real numbers and what I've learned. Welcome to my dungeon: explore the rooms to discover everything."
       ],
@@ -85,8 +85,8 @@
   },
   "performance": {
     "period": {
-      "en": "Jan 2025 – Oct 2025",
-      "it": "Gen 2025 – Ott 2025"
+      "en": "Jan 2024 – Oct 2026",
+      "it": "Gen 2024 – Ott 2026"
     },
     "stats": [
       {
@@ -102,7 +102,7 @@
           "en": "Win rate",
           "it": "Win rate"
         },
-        "value": "58%",
+        "value": "76%",
         "tone": ""
       },
       {
@@ -172,24 +172,34 @@
     ],
     "payouts": [
       {
-        "firm": "Prop Firm #1",
-        "amount": 3200,
+        "firm": "TakeProfitTrader",
+        "amount": 26300,
         "date": "2025-03"
       },
       {
-        "firm": "Prop Firm #2",
-        "amount": 5750,
+        "firm": "TakeProfitTrader",
+        "amount": 18250,
         "date": "2025-05"
       },
       {
-        "firm": "Prop Firm #1",
-        "amount": 4100,
+        "firm": "TakeProfitTrader",
+        "amount": 22100,
         "date": "2025-07"
       },
       {
-        "firm": "Prop Firm #3",
-        "amount": 7900,
+        "firm": "TakeProfitTrader",
+        "amount": 9500,
         "date": "2025-09"
+      },
+      {
+        "firm": "TakeProfitTrader",
+        "amount": 15210,
+        "date": "2026-10"
+      },
+      {
+        "firm": "TakeProfitTrader + FundedNext",
+        "amount": 10520,
+        "date": "2026-11"
       }
     ],
     "disclaimer": {
@@ -202,24 +212,24 @@
       "id": "spotify",
       "icon": "spotify",
       "label": "Spotify",
-      "handle": "vkeq",
+      "handle": "gnol",
       "url": "https://open.spotify.com/",
       "color": "#1db954"
     },
     {
       "id": "instagram",
-      "icon": "instagram",
-      "label": "Instagram",
-      "handle": "@vkeq",
-      "url": "https://instagram.com/vkeq",
-      "color": "#e1306c"
+      "icon": "tiktok",
+      "label": "TikTok",
+      "handle": "@vkeq.nq",
+      "url": "https://tiktok.com/@vkeq.nq",
+      "color": "#f2f2f2"
     },
     {
       "id": "discord",
       "icon": "discord",
       "label": "Discord",
-      "handle": "vkeq community",
-      "url": "https://discord.gg/",
+      "handle": "vkeq",
+      "url": "https://discord.com/users/692789059323560017",
       "color": "#5865f2"
     }
   ]
