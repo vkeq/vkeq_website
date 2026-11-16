@@ -340,6 +340,12 @@ async function putFile(path, text, message) {
   if (!cur.ok && cur.status !== 404) throw new Error(`lettura file: ${cur.status}`);
   const sha = cur.ok ? (await cur.json()).sha : undefined;
   const put = await fetch(api, { method: 'PUT', headers, body: JSON.stringify({ message, content: b64(text), branch: s.branch, sha }) });
+  if (put.status === 403 || put.status === 404)
+    throw new Error(
+      'il token non ha il permesso di scrivere su questo repository. Su GitHub modifica il token: Repository access → "Only select repositories" con ' +
+        s.repo +
+        ', e in Repository permissions imposta "Contents" su "Read and write". Poi premi di nuovo Pubblica',
+    );
   if (!put.ok) throw new Error(`${put.status} ${(await put.json().catch(() => ({}))).message || ''}`);
 }
 
@@ -356,7 +362,7 @@ $('#a-publish').addEventListener('click', async () => {
     changed();
     flash('Pubblicato! Il sito online si aggiornerà tra 1-2 minuti.', 10000);
   } catch (e) {
-    flash('Pubblicazione non riuscita: ' + esc(e.message) + '. Controlla token e impostazioni GitHub.', 10000);
+    flash('Pubblicazione non riuscita: ' + esc(e.message) + '.', 20000);
   }
 });
 
