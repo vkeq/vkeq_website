@@ -4,7 +4,7 @@
 
 # vkeq's dungeon
 
-**vkeq's dungeon** is the personal website of vkeq, a day trader in futures and options, built as a small
+**vkeq's dungeon** is the personal website of vkeq, a futures & options trader, built as a small
 dungeon crawler. There are no pages to scroll: you walk a little voxel trader, in a suit and shades, through
 torch-lit stone rooms. Every room keeps a piece of the keeper's world: who vkeq is, the trading style, the
 numbers and the socials. Along the way, barrels, gold and old books hide short stories from market history.
